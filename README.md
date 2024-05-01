@@ -1,0 +1,2 @@
+# Eventify
+Event Ticketing App
