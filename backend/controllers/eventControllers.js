@@ -1,5 +1,13 @@
-const cloudinary = require("cloudinary").v2;
+const NodeGeocoder = require("node-geocoder");
 const Event = require("../model/Events");
+const cloudinary = require("cloudinary").v2;
+
+const options = {
+  provider: "google",
+  apiKey: "AIzaSyCnqbebQOpYAMedUi-Ct_xKwXmWlMsO_Q4",
+};
+
+const geocoder = NodeGeocoder(options);
 
 // Configure Cloudinary
 cloudinary.config({
@@ -21,7 +29,6 @@ exports.getAllEvents = async (req, res) => {
 // Add a new event
 exports.createEvent = async (req, res) => {
   try {
-    const { type, title, startingTime, description } = req.body;
     const file = req.file; // Assuming Multer has saved the file
 
     // Upload image to Cloudinary
@@ -29,19 +36,46 @@ exports.createEvent = async (req, res) => {
       folder: "event_images", // Optional: set a folder in Cloudinary
     });
 
-    // Create a new event with Cloudinary image URL
-    const newEvent = new Event({
-      type,
-      title,
+    const {
+      eventType,
+      name,
       startingTime,
-      image: cloudinaryUpload.secure_url,
       description,
+      location,
+      category,
+      tickets,
+      owner,
+    } = req.body;
+
+    // Perform geocoding to get coordinates
+    geocoder.geocode(location, async function (err, data) {
+      if (err || !data.results || data.results.length === 0) {
+        return res.status(400).json({ error: "Invalid address" });
+      }
+
+      const { lat, lng } = data.results[0].geometry.location;
+
+      // Create a new event with image URL and coordinates
+      const newEvent = new Event({
+        eventType,
+        name,
+        startingTime,
+        image: cloudinaryUpload.secure_url,
+        description,
+        category,
+        tickets,
+        owner,
+        location: {
+          type: "Point",
+          coordinates: [lng, lat],
+        },
+      });
+
+      // Save the event to MongoDB
+      const savedEvent = await newEvent.save();
+
+      res.status(201).json(savedEvent);
     });
-
-    // Save the event to MongoDB
-    const savedEvent = await newEvent.save();
-
-    res.status(201).json(savedEvent);
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
   }

@@ -26,6 +26,9 @@ import { createDrawerNavigator } from "@react-navigation/drawer";
 import DrawerContent from "./DrawerContent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import OrganizerRegistration from "./screens/OrganizerRegistration";
+import AddEvent from "./screens/EventsUploads/AddEvent";
+import AddEventTypes from "./screens/EventsTypes/AddEventTypes";
+import AddEventCategory from "./screens/EventCategory/AddCategory";
 
 const Stack = createNativeStackNavigator();
 const STRIPE_KEY =
@@ -155,6 +158,9 @@ const DrawerNavigator = () => {
       }}
     >
       <Drawer.Screen name="FeaturedDrawerScreen" component={StackNavigator} />
+      <Drawer.Screen name="Add-Event" component={AddEvent} />
+      <Drawer.Screen name="Add-EventTypes" component={AddEventTypes} />
+      <Drawer.Screen name="Add-Category" component={AddEventCategory} />
     </Drawer.Navigator>
   );
 };
@@ -242,37 +248,39 @@ const StackNavigator = () => {
   });
 
   return assetsLoaded ? (
-    <StripeProvider publishableKey={STRIPE_KEY}>
-      <Stack.Navigator>
-        {/*Featured Stack*/}
-        <Stack.Group screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="FeaturedScreen" component={FeaturedTabScreen} />
-          <Stack.Screen name="Cart" component={CartPage} />
-          <Stack.Screen name="Checkout" component={CheckoutScreen} />
-          <Stack.Screen name="EventDetail" component={EventDetail} />
-          <Stack.Screen name="LoginUser" component={LoginNavigator} />
-        </Stack.Group>
-        {/*Schedule Stack*/}
-        <Stack.Group screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Schedule" component={ScheduleScreen} />
-        </Stack.Group>
-        {/*Tickets Stack*/}
-        <Stack.Group screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Tickets" component={TicketsScreen} />
-        </Stack.Group>
-        {/*Account Stack*/}
-        <Stack.Group screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Account" component={AccountScreen} />
-          <Stack.Screen
-            name="UpdateProfile"
-            component={UpdateProfile}
-            options={{
-              headerShown: false,
-            }}
-          />
-        </Stack.Group>
-      </Stack.Navigator>
-    </StripeProvider>
+    <CartProvider>
+      <StripeProvider publishableKey={STRIPE_KEY}>
+        <Stack.Navigator>
+          {/*Featured Stack*/}
+          <Stack.Group screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="FeaturedScreen" component={FeaturedTabScreen} />
+            <Stack.Screen name="Cart" component={CartPage} />
+            <Stack.Screen name="Checkout" component={CheckoutScreen} />
+            <Stack.Screen name="EventDetail" component={EventDetail} />
+            <Stack.Screen name="LoginUser" component={LoginNavigator} />
+          </Stack.Group>
+          {/*Schedule Stack*/}
+          <Stack.Group screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Schedule" component={ScheduleScreen} />
+          </Stack.Group>
+          {/*Tickets Stack*/}
+          <Stack.Group screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Tickets" component={TicketsScreen} />
+          </Stack.Group>
+          {/*Account Stack*/}
+          <Stack.Group screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Account" component={AccountScreen} />
+            <Stack.Screen
+              name="UpdateProfile"
+              component={UpdateProfile}
+              options={{
+                headerShown: false,
+              }}
+            />
+          </Stack.Group>
+        </Stack.Navigator>
+      </StripeProvider>
+    </CartProvider>
   ) : (
     <ActivityIndicator size="small"></ActivityIndicator>
   );

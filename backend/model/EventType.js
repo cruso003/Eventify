@@ -7,7 +7,11 @@ const eventTypeSchema = new mongoose.Schema({
     unique: true,
   },
   description: String,
-  // Add other fields as needed
+  categories: [
+    {
+      name: String,
+    },
+  ],
 });
 
 const EventType = mongoose.model("EventType", eventTypeSchema);

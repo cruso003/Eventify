@@ -6,8 +6,11 @@ const categorySchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
-  description: String,
-  // Add other fields as needed
+  eventType: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "EventType",
+    required: true,
+  },
 });
 
 const Category = mongoose.model("Category", categorySchema);

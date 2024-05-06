@@ -2,24 +2,38 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 import { useAuth } from "../../auth/context";
 import cartApi from "../../api/cart";
 import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const CartContext = createContext();
 
 const CartProvider = ({ children }) => {
-  const { user } = useAuth();
   const [cart, setCart] = useState([]);
   const [allItemsChecked, setAllItemsChecked] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(false);
+
+  const getData = async () => {
+    const userData = await AsyncStorage.getItem("userData");
+    const parsedUser = JSON.parse(userData);
+    setUser(parsedUser);
+  };
+  useEffect(() => {
+    getData();
+  }, []);
 
   const fetchCartItems = async () => {
+    const user = await AsyncStorage.getItem("userData");
+    const parsedUser = JSON.parse(user);
+    const userId = parsedUser._id;
     try {
       setLoading(true);
       if (user) {
-        const response = await cartApi.getUserCartItems(user._id);
+        const response = await cartApi.getUserCartItems(userId);
+        //console.log(response);
         if (Array.isArray(response.data)) {
           setCart(response.data);
         } else {
-          console.error("Invalid response data");
+          //console.error("Invalid response data");
         }
       } else {
         setCart([]);

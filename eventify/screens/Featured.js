@@ -8,7 +8,7 @@
  * [X] Build the FEATURED section (Flatlist)
  * [X] Build the FOR YOU section
  */
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -20,17 +20,28 @@ import {
   TouchableOpacity,
 } from "react-native";
 import styled from "styled-components/native";
-import { dummyData, FONTS, SIZES, COLORS, icons, images } from "../constants";
+import { dummyData, SIZES, COLORS, icons } from "../constants";
 import { McIcon, McText } from "../components";
 import moment from "moment";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useCart } from "../components/context/CartContext";
+import colors from "../config/colors";
 
 const FeaturedScreen = ({ navigation }) => {
+  const cart = useCart();
+  const [cartLength, setCartLength] = useState(0);
+
+  useEffect(() => {
+    if (cart) {
+      // Update cart length when the cart changes
+      setCartLength(cart.length);
+    }
+  }, [cart]);
+
   const handleAccountNavigation = () => {
     navigation.navigate("Account");
   };
-  // const { user } = useAuth();
   const _renderItem = ({ item, index }) => {
     return (
       <TouchableWithoutFeedback
@@ -102,8 +113,30 @@ const FeaturedScreen = ({ navigation }) => {
           </McText>
           <McText h1>Explore Events</McText>
         </View>
-        <TouchableOpacity onPress={handleAccountNavigation}>
-          <Ionicons name="person-circle-outline" size={30} color="white" />
+        <TouchableOpacity
+          style={[styles.centerElement, { width: 50, height: 50 }]}
+          onPress={() => navigation.navigate("Cart")}
+        >
+          <MaterialIcons name="shopping-cart-checkout" size={28} color="#fff" />
+          <View
+            style={[
+              styles.centerElement,
+              {
+                width: 18,
+                height: 18,
+                position: "absolute",
+                right: 5,
+                top: 5,
+                backgroundColor:
+                  cart && cart.length > 0 ? colors.secondary : "transparent",
+                borderRadius: 9,
+              },
+            ]}
+          >
+            {cart && cartLength > 0 && (
+              <Text style={{ fontSize: 10, color: "white" }}>{cartLength}</Text>
+            )}
+          </View>
         </TouchableOpacity>
       </SectionHeader>
       {/*Search Section*/}
@@ -228,6 +261,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.black,
   },
+  centerElement: { justifyContent: "center", alignItems: "center" },
 });
 
 export default FeaturedScreen;

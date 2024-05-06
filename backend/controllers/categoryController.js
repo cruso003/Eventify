@@ -1,4 +1,5 @@
 const Category = require("../model/EventCategory");
+const EventType = require("../model/EventType");
 
 // Controller for handling category-related operations
 
@@ -15,9 +16,30 @@ exports.getAllCategories = async (req, res) => {
 // Create a new category
 exports.createCategory = async (req, res) => {
   try {
-    const category = new Category(req.body);
-    const savedCategory = await category.save();
-    res.status(201).json(savedCategory);
+    const { name, eventType } = req.body;
+
+    {
+      /*// Check if a category with the same name already exists within the specified event type
+    const existingCategory = await Category.findOne({ name, eventType });
+    if (existingCategory) {
+      return res.status(400).json({
+        message: "Category with this name already exists ",
+      });
+    }*/
+    }
+
+    // Create a new category
+    const newCategory = { name };
+
+    // Update the corresponding event type
+    const updatedEventType = await EventType.findByIdAndUpdate(
+      eventType,
+      { $push: { categories: newCategory } }, // Assuming categories are stored as IDs in EventType model
+      { new: true }
+    );
+
+    // Send the updated event type to the client as a response
+    res.status(201).json(updatedEventType);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

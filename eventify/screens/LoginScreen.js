@@ -35,7 +35,7 @@ const LoginScreen = () => {
       // Handle successful login, e.g., store user data in context
       const data = await response.data.user;
       //save user data to AsyncStorage
-      AsyncStorage.setItem("userData", data);
+      AsyncStorage.setItem("userData", JSON.stringify(data));
       AsyncStorage.setItem("isLoggedIn", JSON.stringify(true));
       navigation.navigate("FeaturedScreen"); // Navigate to the home screen or any other screen
     } catch (error) {

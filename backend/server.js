@@ -28,6 +28,7 @@ const organizerRoutes = require("./routes/organizerRoutes");
 const eventTypeRoutes = require("./routes/eventTypeRoutes");
 const ticketRoutes = require("./routes/ticketRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
+const admin = require("./routes/admin");
 
 //import Middlewares
 
@@ -87,6 +88,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Serve static files for the React Native app
 app.use("/", express.static("public"));
 
+// Serve static files for the admin React app
+app.use("/admin", express.static("uploads"));
+
 // Use the db module to establish the MongoDB connection
 db.connectToDatabase();
 
@@ -101,6 +105,13 @@ app.use("/api/payments", paymentRoute);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/eventTypes", eventTypeRoutes);
+
+//Admin app
+app.use("/api/v2/admin", admin);
+app.use("/api/v2/events", upload.single("image"), EventRoutes);
+app.use("/api/v2/user", userRoute);
+app.use("/api/v2/categories", categoryRoutes);
+app.use("/api/v2/eventTypes", eventTypeRoutes);
 
 const port = process.env.PORT || config.get("port");
 server.listen(port, function () {

@@ -4,7 +4,7 @@ import {
   MaterialCommunityIcons,
   MaterialIcons,
 } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   SafeAreaView,
@@ -18,11 +18,22 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { useAuth } from "../auth/context";
 import { useCart } from "../components/context/CartContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message";
 
 const CartPage = ({ navigation }) => {
-  const { user } = useAuth();
+  const [user, setUser] = useState(false);
+
+  const getData = async () => {
+    const userData = await AsyncStorage.getItem("userData");
+
+    setUser(JSON.parse(userData));
+  };
+  useEffect(() => {
+    getData();
+  }, []);
+
   const handleCheckout = () => {
     if (user) {
       // Filter out unchecked items from the cart
@@ -36,7 +47,12 @@ const CartPage = ({ navigation }) => {
         });
       } else {
         // If no items are checked, display a message or handle the case accordingly
-        console.log("No items are checked. Cannot proceed to checkout.");
+        Toast.show({
+          type: "error",
+          text1: "Check an item to checkout.",
+          visibilityTime: 3000,
+        });
+        console.log("Check an item to checkout.");
       }
     } else {
       // If user is not logged in, navigate to the login screen
