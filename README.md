@@ -19,6 +19,10 @@ Eventify is a mobile application designed to streamline the process of discoveri
 - Push Notifications: Firebase Cloud Messaging (FCM) - In the works.
 - Payment Processing: MTN MOMO API and Stripe API
 
+## Authors
+
+- [cruso003](https://github.com/cruso003)
+
 ## Installation
 
 1. Clone the repository: `git clone https://github.com/cruso003/Eventify.git`
