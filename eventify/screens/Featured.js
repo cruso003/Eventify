@@ -14,22 +14,23 @@ import {
   StyleSheet,
   FlatList,
   SafeAreaView,
-  TextInput,
-  ImageBackground,
   TouchableWithoutFeedback,
+  ImageBackground,
   TouchableOpacity,
+  Text,
 } from "react-native";
 import styled from "styled-components/native";
 import { dummyData, SIZES, COLORS, icons } from "../constants";
 import { McIcon, McText } from "../components";
 import moment from "moment";
 import { LinearGradient } from "expo-linear-gradient";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useCart } from "../components/context/CartContext";
 import colors from "../config/colors";
 
 const FeaturedScreen = ({ navigation }) => {
-  const cart = useCart();
+  const cartMain = useCart();
+  const cart = cartMain.cart;
   const [cartLength, setCartLength] = useState(0);
 
   useEffect(() => {
@@ -142,20 +143,39 @@ const FeaturedScreen = ({ navigation }) => {
       {/*Search Section*/}
       <SearchSection>
         <SearchView>
-          <McIcon source={icons.search} size={24} />
-          <TextInput
-            placeholder="Search for Events"
-            placeholderTextColor={COLORS.gray1}
-            style={{
-              //...FONTS.h4,
-              color: COLORS.white,
-              width: 250,
-              fontFamily: "ProductSans-Bold",
-              fontSize: 16,
-              lineHeight: 22,
-            }}
-          ></TextInput>
-          <McIcon source={icons.filter} size={24} />
+          <TouchableWithoutFeedback
+            onPress={() => navigation.navigate("Search")}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: "#ffffff",
+                height: 45,
+                borderWidth: 1,
+                borderColor: "#cccccc",
+                borderRadius: 4,
+                width: "100%",
+              }}
+            >
+              <MaterialCommunityIcons
+                name="store-search"
+                size={20}
+                color="#000000"
+                style={{
+                  marginHorizontal: 10,
+                }}
+              />
+              <Text
+                style={{
+                  backgroundColor: "#fff",
+                  color: "#ccc",
+                }}
+              >
+                Search Events
+              </Text>
+            </View>
+          </TouchableWithoutFeedback>
         </SearchView>
       </SearchSection>
       {/*Featured*/}
@@ -230,8 +250,6 @@ const SearchView = styled.View`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  margin-left: 9px;
-  margin-right: 15px;
 `;
 
 const SectionTitle = styled.View`

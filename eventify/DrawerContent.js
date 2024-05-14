@@ -8,9 +8,9 @@ import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const DrawerList = [
-  { icon: "add-outline", label: "Upload Event", navigateTo: "Add-Event" },
+  //{ icon: "add-outline", label: "Upload Event", navigateTo: "Add-Event" },
   { icon: "qr-code-outline", label: "QR Scanner", onPress: () => {} },
-  {
+  /*{
     icon: "add-circle-outline",
     label: "Add EventTypes",
     navigateTo: "Add-EventTypes",
@@ -19,12 +19,12 @@ const DrawerList = [
     icon: "bag-add-outline",
     label: "Add Event Category",
     navigateTo: "Add-Category",
-  },
-  { icon: "ticket-outline", label: "My Tickets", onPress: () => {} },
-  { icon: "calendar-outline", label: "My Events", onPress: () => {} },
+  },*/
+  { icon: "ticket-outline", label: "My Tickets", navigateTo: "Tickets" },
+  { icon: "calendar-outline", label: "My Events", navigateTo: "Tickets" },
   { icon: "share-outline", label: "Invite Friends", onPress: () => {} },
   { icon: "help-circle-outline", label: "Help & Support", onPress: () => {} },
-  { icon: "settings-outline", label: "Settings", onPress: () => {} },
+  //{ icon: "settings-outline", label: "Settings", onPress: () => {} },
 ];
 const DrawerLayout = ({ icon, label, navigateTo }) => {
   const navigation = useNavigation();

@@ -27,9 +27,9 @@ import walletApi from "../api/wallet";
 import cartApi from "../api/cart";
 import { useAuth } from "../auth/context";
 import { useCart } from "../components/context/CartContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function Checkout({ route, navigation }) {
-  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const { subtotalPrice, setCart } = useCart();
   const [requiredFieldsFilled, setRequiredFieldsFilled] = useState(false);
@@ -37,6 +37,16 @@ function Checkout({ route, navigation }) {
   const [walletBalance, setWalletBalance] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [user, setUser] = useState(false);
+
+  const getData = async () => {
+    const userData = await AsyncStorage.getItem("userData");
+
+    setUser(JSON.parse(userData));
+  };
+  useEffect(() => {
+    getData();
+  }, []);
 
   useEffect(() => {
     // Fetch wallet balance when the component mounts
@@ -58,9 +68,7 @@ function Checkout({ route, navigation }) {
     let grandTotal = 0;
 
     stepOne.cartItems.forEach((item) => {
-      const subtotal = item.salePrice
-        ? item.salePrice + item.deliveryFee
-        : item.amount;
+      const subtotal = item.salePrice ? item.salePrice : item.amount;
       grandTotal += subtotal;
     });
 
@@ -69,13 +77,11 @@ function Checkout({ route, navigation }) {
 
   const validateRequiredFields = () => {
     if (currentStep === 1) {
-      const { fullName, streetAddress, phone } = stepTwo;
+      const { fullName, phone } = stepTwo;
 
       // Check if the required fields are filled
       const allRequiredFieldsFilled =
-        fullName.trim() !== "" &&
-        streetAddress.trim() !== "" &&
-        phone.trim() !== "";
+        fullName?.trim() !== "" && phone?.trim() !== "";
 
       // Update the state based on the validation result
       setRequiredFieldsFilled(allRequiredFieldsFilled);
@@ -92,12 +98,7 @@ function Checkout({ route, navigation }) {
 
   const bankPayment = async () => {
     const totalAmount = Math.floor(
-      (subtotalPrice() +
-        stepOne.cartItems.reduce(
-          (total, item) =>
-            item.deliveryFee ? total + item.deliveryFee : total,
-          0
-        )) *
+      (subtotalPrice() + stepOne.cartItems.reduce((total, item) => total, 0)) *
         100
     );
 
@@ -111,11 +112,11 @@ function Checkout({ route, navigation }) {
 
     // Initialize payment sheet
     const initResponse = await initPaymentSheet({
-      merchantDisplayName: "Swift Cart",
+      merchantDisplayName: "Eventify",
       paymentIntentClientSecret: response.data.paymentIntent,
       defaultBillingDetails: {
         name: `${stepTwo.fullName}`,
-        address: `${stepTwo.streetAddress}`,
+        address: "",
         phone: `${stepTwo.phone}`,
         email: `${stepTwo.emailAddress}`,
       },
@@ -140,18 +141,13 @@ function Checkout({ route, navigation }) {
 
   const paymentMethods = [
     {
-      id: "cashOnDelivery",
-      name: "Pay on Delivery",
-      icon: require("../assets/cash-on-delivery.jpg"),
-    },
-    {
       id: "bankCard",
       name: "Bank Card",
       icon: require("../assets/cards.jpg"),
     },
     {
       id: "wallet",
-      name: `Swift Pay - Wallet balance: $${walletBalance.toFixed(2)}`,
+      name: `Wallet balance: $${walletBalance.toFixed(2)}`,
       icon: require("../assets/wallet.jpg"),
     },
     {
@@ -251,10 +247,6 @@ function Checkout({ route, navigation }) {
             alert("Insufficient balance in your wallet");
           }
           break;
-        case "cashOnDelivery":
-          // Finalize the order without any additional steps
-          cashOnDelivery();
-          break;
         default:
           break;
       }
@@ -314,11 +306,7 @@ function Checkout({ route, navigation }) {
     }
   };
 
-  const cashOnDelivery = () => {
-    setCurrentStep(currentStep + 1);
-  };
-
-  const [steps] = useState(["Review", "Shipping", "Payment", "Submit"]);
+  const [steps] = useState(["Review", "Attendee", "Payment", "Submit"]);
   const [stepOne] = useState({
     cartItemsIsLoading: false,
     cartItems: route.params.cartItems,
@@ -328,19 +316,15 @@ function Checkout({ route, navigation }) {
   const hasCartItems = stepOne.cartItems && stepOne.cartItems.length > 0;
 
   // Define an initial `selectedAddress` from the first cart item if there are any items
-  const initialSelectedAddress = hasCartItems
-    ? stepOne.cartItems[0].selectedAddress
-    : null;
+  const paidUser = hasCartItems ? stepOne.cartItems[0].user : null;
 
   // Initialize `stepTwo` based on the `selectedAddress` of the first cart item
   const [stepTwo, setStepTwo] = useState({
-    fullName: initialSelectedAddress ? initialSelectedAddress.name : user.name,
-    streetAddress: initialSelectedAddress ? initialSelectedAddress.street : "",
-    aptSuite: initialSelectedAddress ? initialSelectedAddress.landmark : "",
-    city: initialSelectedAddress ? initialSelectedAddress.city : "",
-    state: initialSelectedAddress ? initialSelectedAddress.state : "",
-    phone: initialSelectedAddress ? initialSelectedAddress.mobileNo : "",
-    emailAddress: user.email ? user.email : "",
+    fullName: paidUser ? paidUser.name : user.name,
+    profession: paidUser ? paidUser.profession : "",
+    sex: paidUser ? paidUser.sex : "",
+    phone: paidUser ? paidUser.phoneNumber : "",
+    emailAddress: paidUser.email ? paidUser.email : "",
   });
 
   const styles = StyleSheet.create({
@@ -351,7 +335,7 @@ function Checkout({ route, navigation }) {
       keyboardVerticalOffset={70}
       style={{
         flex: 1,
-        marginTop: Platform.OS === "ios" ? 40 : StatusBar.currentHeight,
+        //marginTop: Platform.OS === "ios" ? 40 : StatusBar.currentHeight,
       }}
       behavior={Platform.OS === "ios" ? "padding" : null}
     >
@@ -553,7 +537,7 @@ function Checkout({ route, navigation }) {
                             style={{ paddingRight: 10 }}
                           >
                             <Image
-                              source={{ uri: item.product.images[0] }}
+                              source={item?.event.image}
                               style={[
                                 styles.centerElement,
                                 {
@@ -572,19 +556,13 @@ function Checkout({ route, navigation }) {
                             }}
                           >
                             <Text numberOfLines={1} style={{ fontSize: 15 }}>
-                              {item.product.name}
+                              {item.event.title}
                             </Text>
-                            {item && item.selectedVariations && (
+                            {item && item.ticket && (
                               <Text
-                                style={{ color: "#8f8f8f", marginBottom: 10 }}
+                                style={{ color: "#333333", marginBottom: 10 }}
                               >
-                                Variation:{" "}
-                                {Object.entries(item.selectedVariations)
-                                  .map(
-                                    ([variation, value]) =>
-                                      `${variation}: ${value}`
-                                  )
-                                  .join(", ")}
+                                Ticket Type: {item.ticket.type}
                               </Text>
                             )}
                           </View>
@@ -672,7 +650,7 @@ function Checkout({ route, navigation }) {
                       color: "#6689ff",
                     }}
                   >
-                    Street Address<Text style={{ color: "red" }}>*</Text>
+                    Profession
                   </Text>
                   <TextInput
                     style={{
@@ -682,13 +660,13 @@ function Checkout({ route, navigation }) {
                       borderWidth: 1,
                       borderColor: "#6689ff",
                     }}
-                    onChangeText={(streetAddress) => {
+                    onChangeText={(profession) => {
                       setStepTwo((prevStepTwo) => ({
                         ...prevStepTwo,
-                        streetAddress,
+                        profession,
                       }));
                     }}
-                    value={stepTwo.streetAddress}
+                    value={stepTwo.profession}
                   />
                 </View>
                 <View style={{ width: "40%", paddingLeft: 8 }}>
@@ -705,7 +683,7 @@ function Checkout({ route, navigation }) {
                       color: "#6689ff",
                     }}
                   >
-                    Apt / Suite #
+                    Sex
                   </Text>
                   <TextInput
                     style={{
@@ -715,76 +693,13 @@ function Checkout({ route, navigation }) {
                       borderWidth: 1,
                       borderColor: "#6689ff",
                     }}
-                    onChangeText={(aptSuite) =>
+                    onChangeText={(sex) =>
                       setStepTwo((prevStepTwo) => ({
                         ...prevStepTwo,
-                        aptSuite,
+                        sex,
                       }))
                     }
-                    value={stepTwo.aptSuite}
-                  />
-                </View>
-              </View>
-
-              <View style={{ flexDirection: "row", marginBottom: 25 }}>
-                <View style={{ width: "50%" }}>
-                  <Text
-                    style={{
-                      marginBottom: 5,
-                      fontSize: 12,
-                      position: "absolute",
-                      left: 15,
-                      top: -9,
-                      paddingHorizontal: 6,
-                      backgroundColor: "#fff",
-                      zIndex: 10,
-                      color: "#6689ff",
-                    }}
-                  >
-                    City
-                  </Text>
-                  <TextInput
-                    style={{
-                      width: "100%",
-                      padding: 10,
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: "#6689ff",
-                    }}
-                    onChangeText={(city) =>
-                      setStepTwo((prevStepTwo) => ({ ...prevStepTwo, city }))
-                    }
-                    value={stepTwo.city}
-                  />
-                </View>
-                <View style={{ width: "50%", paddingLeft: 8 }}>
-                  <Text
-                    style={{
-                      marginBottom: 5,
-                      fontSize: 12,
-                      position: "absolute",
-                      left: 15,
-                      top: -9,
-                      paddingHorizontal: 6,
-                      backgroundColor: "#fff",
-                      zIndex: 10,
-                      color: "#6689ff",
-                    }}
-                  >
-                    State
-                  </Text>
-                  <TextInput
-                    style={{
-                      width: "100%",
-                      padding: 10,
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: "#6689ff",
-                    }}
-                    onChangeText={(state) =>
-                      setStepTwo((prevStepTwo) => ({ ...prevStepTwo, state }))
-                    }
-                    value={stepTwo.state}
+                    value={stepTwo.sex}
                   />
                 </View>
               </View>
@@ -918,41 +833,7 @@ function Checkout({ route, navigation }) {
             stepOne.cartItems &&
             stepOne.cartItems.map((item, i) => (
               <View key={i} style={{ padding: 15 }}>
-                <Text style={{ fontSize: 17, marginBottom: 10 }}>
-                  Shipping Address
-                </Text>
-
-                {/* Check if selectedPickupStation is available */}
-                {item.selectedPickupStation ? (
-                  // If selectedPickupStation is available, use its information
-                  <>
-                    <Text style={{ color: "#858585", marginBottom: 20 }}>
-                      {item.selectedPickupStation.name}
-                    </Text>
-                    <Text style={{ color: "#858585" }}>
-                      {item.selectedPickupStation.address.street}
-                    </Text>
-                    <Text style={{ color: "#858585" }}>
-                      {item.selectedPickupStation.address.city}{" "}
-                      {item.selectedPickupStation.address.state}
-                    </Text>
-                  </>
-                ) : (
-                  // If selectedPickupStation is not available, fall back to stepTwo
-                  <>
-                    <Text style={{ color: "#858585", marginBottom: 20 }}>
-                      {stepTwo.fullName}
-                    </Text>
-                    <Text style={{ color: "#858585" }}>
-                      {stepTwo.streetAddress}
-                    </Text>
-                    <Text style={{ color: "#858585" }}>
-                      {stepTwo.city} {stepTwo.state}
-                    </Text>
-                  </>
-                )}
-
-                {/* Displaying other item information */}
+                {/* Displaying item information */}
                 <View
                   style={{
                     flexDirection: "row",
@@ -960,9 +841,9 @@ function Checkout({ route, navigation }) {
                     justifyContent: "space-between",
                   }}
                 >
-                  <Text style={{ color: "#858585" }}>Product</Text>
+                  <Text style={{ color: "#858585" }}>Event</Text>
                   <Text style={{ fontWeight: "200" }}>
-                    {item.product.name.substr(0, 12) + "..."}
+                    {item.event.title.substr(0, 12) + "..."}
                   </Text>
                 </View>
                 <View
@@ -981,22 +862,7 @@ function Checkout({ route, navigation }) {
                   </Text>
                 </View>
 
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    paddingBottom: 15,
-                    borderBottomWidth: 3,
-                    borderColor: "#ccc",
-                  }}
-                >
-                  <Text style={{ color: "#858585" }}>
-                    {item.shipmentOption}
-                  </Text>
-                  <Text style={{ fontWeight: "bold" }}>
-                    ${item.deliveryFee ? item.deliveryFee.toFixed(2) : 0}
-                  </Text>
-                </View>
+                {/* Sub Total */}
                 <View
                   style={{
                     flexDirection: "row",
@@ -1007,10 +873,9 @@ function Checkout({ route, navigation }) {
                   <Text style={{ color: "#858585" }}>Sub Total</Text>
                   <Text style={{ fontWeight: "bold", fontSize: 18 }}>
                     $
-                    {(
-                      (item.amount ? item.amount : item.salePrice) +
-                      item.deliveryFee
-                    ).toFixed(2)}
+                    {item.amount
+                      ? item.amount.toFixed(2)
+                      : item.salePrice.toFixed(2)}
                   </Text>
                 </View>
               </View>
@@ -1056,7 +921,7 @@ function Checkout({ route, navigation }) {
                   },
                 ]}
                 onPress={async () => {
-                  try {
+                  /*try {
                     // Check if it's a virtual order
                     if (stepOne.cartItems.some((item) => item.amount)) {
                       const topUpAmount = stepOne.cartItems.reduce(
@@ -1102,16 +967,20 @@ function Checkout({ route, navigation }) {
                       await createOrder(orderDetails);
                     }
 
-                    // After updating the wallet balance and creating the order, navigate to the home screen
+                    // After updating the wallet balance and creating the order, navigate to the feature screen
                     setCurrentStep({ currentStep: 0 });
-                    navigation.navigate("Home");
+                    navigation.navigate("Featured");
                   } catch (error) {
                     console.error("Error processing payment:", error);
                     // Show an alert box to notify the user about the error
                     window.alert(
                       "An error occurred while processing the payment. Please try again later."
                     );
-                  }
+                  }*/
+                  // After updating the wallet balance and creating the order, navigate to the feature screen
+                  setCart([]);
+                  setCurrentStep({ currentStep: 0 });
+                  navigation.navigate("Featured");
                 }}
               >
                 <Text style={{ color: "#fff" }}>Continue Shopping</Text>

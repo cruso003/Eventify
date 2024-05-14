@@ -12,7 +12,9 @@
     "@expo/vector-icons": "^14.0.0",
     "@react-native-async-storage/async-storage": "1.21.0",
     "@react-native-community/clipboard": "^1.5.1",
+    "@react-native-community/datetimepicker": "7.6.1",
     "@react-native-masked-view/masked-view": "0.3.0",
+    "@react-native-picker/picker": "2.6.1",
     "@react-navigation/bottom-tabs": "^6.5.20",
     "@react-navigation/drawer": "^6.6.15",
     "@react-navigation/native": "^6.1.17",
@@ -48,9 +50,7 @@
     "react-native-uuid": "^2.0.2",
     "react-native-web": "^0.19.10",
     "styled-components": "^6.1.8",
-    "styled-components-native-code-mod": "github:styled-components/styled-components-native-code-mod",
-    "@react-native-community/datetimepicker": "7.6.1",
-    "@react-native-picker/picker": "2.6.1"
+    "styled-components-native-code-mod": "github:styled-components/styled-components-native-code-mod"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

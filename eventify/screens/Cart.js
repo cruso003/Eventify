@@ -35,28 +35,23 @@ const CartPage = ({ navigation }) => {
   }, []);
 
   const handleCheckout = () => {
-    if (user) {
-      // Filter out unchecked items from the cart
-      const checkedItems = cart.filter((item) => item.checked);
+    // Filter out unchecked items from the cart
+    const checkedItems = cart.filter((item) => item.checked);
 
-      // If there are checked items, proceed to checkout
-      if (checkedItems.length > 0) {
-        navigation.navigate("Checkout", {
-          cartItems: checkedItems,
-          subtotal: subtotalPrice(checkedItems), // Corrected to use subtotalPrice
-        });
-      } else {
-        // If no items are checked, display a message or handle the case accordingly
-        Toast.show({
-          type: "error",
-          text1: "Check an item to checkout.",
-          visibilityTime: 3000,
-        });
-        console.log("Check an item to checkout.");
-      }
+    // If there are checked items, proceed to checkout
+    if (checkedItems.length > 0) {
+      navigation.navigate("Checkout", {
+        cartItems: checkedItems,
+        subtotal: subtotalPrice(checkedItems), // Corrected to use subtotalPrice
+      });
     } else {
-      // If user is not logged in, navigate to the login screen
-      navigation.navigate("Login");
+      // If no items are checked, display a message or handle the case accordingly
+      Toast.show({
+        type: "error",
+        text1: "Check an item to checkout.",
+        visibilityTime: 3000,
+      });
+      console.log("Check an item to checkout.");
     }
   };
 
@@ -75,7 +70,7 @@ const CartPage = ({ navigation }) => {
       style={{
         flex: 1,
         backgroundColor: "#f6f6f6",
-        marginTop: Platform.OS === "ios" ? 40 : StatusBar.currentHeight,
+        //marginTop: Platform.OS === "ios" ? 40 : StatusBar.currentHeight,
       }}
     >
       <View
@@ -139,14 +134,14 @@ const CartPage = ({ navigation }) => {
                 >
                   <TouchableOpacity
                     onPress={() => {
-                      navigation.navigate("ProductDetails", {
-                        productDetails: item,
+                      navigation.navigate("EventDetail", {
+                        selectedEvent: item,
                       });
                     }}
                     style={{ paddingRight: 10 }}
                   >
                     <Image
-                      source={{ uri: item.product.images[0] }}
+                      source={item?.event.image}
                       style={[
                         styles.centerElement,
                         { height: 60, width: 60, backgroundColor: "#eeeeee" },
@@ -161,14 +156,12 @@ const CartPage = ({ navigation }) => {
                     }}
                   >
                     <Text numberOfLines={1} style={{ fontSize: 15 }}>
-                      {item.product.name}
+                      Event: {item?.event?.title}
                     </Text>
-                    {item && item.selectedVariations && (
+
+                    {item && item.ticket && (
                       <Text style={{ color: "#333333", marginBottom: 10 }}>
-                        Variation:{" "}
-                        {Object.entries(item.selectedVariations)
-                          .map(([variation, value]) => `${variation}: ${value}`)
-                          .join(", ")}
+                        Ticket Type: {item.ticket.type}
                       </Text>
                     )}
                     <Text

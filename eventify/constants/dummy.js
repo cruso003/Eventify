@@ -5,19 +5,30 @@ export const Events = [
     id: 1,
     type: "CONCERT",
     title: "The Weekend",
-    startingTime: "2024/04/24 09:10 PM",
+    startingTime: "2024/05/15 09:10 PM",
     image: require("../assets/images/event_1.png"),
     description:
       "Non exercitation ullamco reprehenderit incididunt. Officia incididunt id exercitation velit aliqua ut deserunt do non. Aliquip sunt dolor enim occaecat ullamco id consectetur .",
+    tickets: [
+      { type: "VIP", price: 100 },
+      { type: "Regular", price: 50 },
+    ],
+    location: { latitude: 6.270270284616665, longitude: -10.734420741781408 },
   },
   {
     id: 2,
     type: "SHOW",
     title: "Firemasters",
-    startingTime: "2024/04/25 08:00 PM",
+    startingTime: "2024/05/17 08:00 PM",
     image: require("../assets/images/event_2.png"),
     description:
       "Lorem ipsum dolor sit amet, consectetur elit adipiscing elit. Venenatis pulvinar a amet in, suspendisse vitae, posuere eu tortor et. Und commodo, fermentum, mauris leo eget.",
+    tickets: [
+      { type: "Premium", price: 80 },
+      { type: "VIP", price: 60 },
+      { type: "General", price: 40 },
+    ],
+    location: { latitude: 6.178274673229805, longitude: -10.489023755783249 },
   },
 ];
 

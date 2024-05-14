@@ -12,7 +12,7 @@ const CartProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(false);
 
-  const getData = async () => {
+  /*const getData = async () => {
     const userData = await AsyncStorage.getItem("userData");
     const parsedUser = JSON.parse(userData);
     setUser(parsedUser);
@@ -60,23 +60,20 @@ const CartProvider = ({ children }) => {
       setCart([]);
     }
   }, [user]);
+  */
 
-  /*
   const addToCart = (cartItem) => {
     const updatedCartItem = {
       ...cartItem,
       qty: 1,
       checked: true,
-      salePrice: cartItem.product.discount_price
-        ? cartItem.product.discount_price
-        : cartItem.product.price,
+      salePrice: cartItem?.ticket?.price,
     };
     const updatedCart = [...cart, updatedCartItem];
     setCart(updatedCart);
   };
-*/
 
-  const addToCart = async (cartItem) => {
+  /*const addToCart = async (cartItem) => {
     try {
       if (user) {
         const response = await cartApi.addToCart(cartItem);
@@ -99,7 +96,7 @@ const CartProvider = ({ children }) => {
     } catch (error) {
       console.error("Error adding item to cart: ", error);
     }
-  };
+  };*/
 
   const addToCartWithAmount = (amount) => {
     // Add wallet top-up to the cart

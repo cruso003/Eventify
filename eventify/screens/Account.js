@@ -30,33 +30,31 @@ const ProfileScreen = () => {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(false);
 
-  const getData = async () => {
-    const userData = await AsyncStorage.getItem("userData");
-
-    setUser(JSON.parse(userData));
-  };
   useEffect(() => {
-    getData();
+    fetchUser();
   }, []);
 
   const fetchUser = async () => {
-    const userA = await AsyncStorage.getItem("userData");
-    const parsedUser = JSON.parse(userA);
-    const userId = parsedUser._id;
-    try {
-      setLoading(true);
-      const response = await users.getUserById(userId);
-      const updatedUser = response?.data?.data;
-      if (updatedUser) {
-        // Check if updatedUser is not undefined
-        setUser(updatedUser);
-      } else {
-        console.log("Updated user data is undefined");
+    const userData = await AsyncStorage.getItem("userData");
+    setUser(JSON.parse(userData));
+    const parsedUser = JSON.parse(userData);
+    if (parsedUser) {
+      const userId = parsedUser._id;
+      try {
+        setLoading(true);
+        const response = await users.getUserById(userId);
+        const updatedUser = response?.data?.data;
+        if (updatedUser) {
+          setUser(updatedUser);
+          await AsyncStorage.setItem("userData", JSON.stringify(updatedUser));
+        } else {
+          console.log("Updated user data is undefined");
+        }
+      } catch (error) {
+        console.error("Error fetching updated user details: ", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching updated user details: ", error);
-    } finally {
-      setLoading(false);
     }
   };
 

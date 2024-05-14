@@ -8,7 +8,7 @@ const eventController = require("../controllers/eventControllers");
 router.get("/", eventController.getAllEvents);
 
 // Add a new event
-router.post("/", eventController.createEvent);
+router.post("/add-event", eventController.createEvent);
 
 // Delete an event by ID
 router.delete("/:id", eventController.deleteEventById);

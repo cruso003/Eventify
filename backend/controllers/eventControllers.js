@@ -29,7 +29,10 @@ exports.getAllEvents = async (req, res) => {
 // Add a new event
 exports.createEvent = async (req, res) => {
   try {
-    const file = req.file; // Assuming Multer has saved the file
+    const file = req.file;
+
+    console.log(req.body, "req.body");
+    console.log(file, "file");
 
     // Upload image to Cloudinary
     const cloudinaryUpload = await cloudinary.uploader.upload(file.path, {
@@ -70,6 +73,8 @@ exports.createEvent = async (req, res) => {
           coordinates: [lng, lat],
         },
       });
+
+      console.log(newEvent, "newEvent");
 
       // Save the event to MongoDB
       const savedEvent = await newEvent.save();

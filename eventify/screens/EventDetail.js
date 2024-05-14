@@ -27,15 +27,81 @@ import moment from "moment";
 import { LinearGradient } from "expo-linear-gradient";
 import { dummyData, FONTS, SIZES, COLORS, icons, images } from "../constants";
 import { McAvatar, McIcon, McText } from "../components";
-import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useCart } from "../components/context/CartContext";
 
 const EventDetail = ({ navigation, route }) => {
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [user, setUser] = useState(false);
+  const { addToCart, cart } = useCart();
+  const [locationName, setLocationName] = useState("");
+
+  const getData = async () => {
+    const userData = await AsyncStorage.getItem("userData");
+
+    setUser(JSON.parse(userData));
+  };
+  useEffect(() => {
+    getData();
+  }, []);
 
   useEffect(() => {
     let { selectedEvent } = route.params;
     setSelectedEvent(selectedEvent);
-  }, []);
+    // Call function to fetch location name when selectedEvent changes
+    fetchLocationName(
+      selectedEvent?.location.latitude,
+      selectedEvent?.location.longitude
+    );
+  }, [route.params]);
+
+  // Function to fetch location name using reverse geocoding
+  const fetchLocationName = async (latitude, longitude) => {
+    try {
+      // Call reverse geocoding API here and set the locationName state
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyDS-r_uCCqf3x4ATCTNhF2GGIy9GOwqfwI`
+      );
+      const data = await response.json();
+      const firstResult = data.results[0];
+      if (firstResult) {
+        setLocationName(firstResult.formatted_address); // Set location name
+      } else {
+        setLocationName("Location not found");
+      }
+    } catch (error) {
+      console.error("Error fetching location name:", error);
+      setLocationName("Location not found");
+    }
+  };
+
+  const handleBuyTicket = (ticket) => {
+    // Handle buy ticket logic here
+    setSelectedTicket(ticket);
+  };
+
+  const isTicketSelected = (ticket) => {
+    return selectedTicket === ticket;
+  };
+
+  const addEventToCart = async () => {
+    // Create the cart item
+    const cartItem = {
+      user: user,
+      event: selectedEvent,
+      salePrice: selectedTicket.price,
+      ticket: selectedTicket,
+      qty: 1,
+      checked: true,
+    };
+
+    addToCart(cartItem);
+    // Navigate to the cart screen
+    navigation.navigate("Cart");
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -196,14 +262,24 @@ const EventDetail = ({ navigation, route }) => {
           >
             <MapView
               provider={PROVIDER_GOOGLE}
-              style={{
-                height: 250,
-                marginTop: 20,
+              style={{ height: 250, marginTop: 20 }}
+              region={{
+                latitude: selectedEvent?.location.latitude,
+                longitude: selectedEvent?.location.longitude,
+                latitudeDelta: 0.005,
+                longitudeDelta: 0.005 * (SIZES.width / SIZES.height),
               }}
-              minZoomLevel={15}
-              initialRegion={dummyData.Region}
               customMapStyle={dummyData.MapStyle}
-            ></MapView>
+            >
+              <Marker
+                coordinate={{
+                  latitude: selectedEvent?.location.latitude,
+                  longitude: selectedEvent?.location.longitude,
+                }}
+                title={selectedEvent?.title + " - " + selectedEvent?.type}
+                description={locationName}
+              />
+            </MapView>
           </View>
           <View style={{ paddingBottom: 150 }}></View>
         </LocationSection>
@@ -218,50 +294,112 @@ const EventDetail = ({ navigation, route }) => {
             marginHorizontal: 30,
           }}
         >
-          <View>
-            <McText body3 style={{ opacity: 0.5, letterSpacing: 1 }}>
-              PRICE
-            </McText>
+          {/* Display ticket options */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            {selectedEvent?.tickets.map((ticket, index) => (
+              <TouchableOpacity
+                key={index}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: isTicketSelected(ticket)
+                    ? COLORS.blue
+                    : COLORS.transparentWhite,
+                  padding: 6,
+                  borderRadius: 15,
+                  marginRight: 10,
+                }}
+                onPress={() => handleBuyTicket(ticket)}
+              >
+                <View style={{ marginRight: 10 }}>
+                  <McText
+                    h4
+                    style={{
+                      color: isTicketSelected(ticket)
+                        ? COLORS.white
+                        : COLORS.black,
+                    }}
+                  >
+                    {ticket.type}
+                  </McText>
+                  <McText
+                    body3
+                    style={{
+                      color: isTicketSelected(ticket)
+                        ? COLORS.white
+                        : COLORS.black,
+                    }}
+                  >
+                    ${ticket.price.toFixed(2)}
+                  </McText>
+                </View>
+                {isTicketSelected(ticket) && (
+                  <McIcon
+                    source={icons.checked}
+                    size={24}
+                    style={{ tintColor: COLORS.white }}
+                  />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          {/* Buy Ticket button */}
+          {!selectedTicket ? (
             <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "flex-end",
-                alignItems: "flex-end",
-              }}
-            >
-              <McText h2>$5.00</McText>
-              <McText h3>/Person</McText>
-            </View>
-          </View>
-          <TouchableOpacity>
-            <LinearGradient
-              colors={COLORS.linear}
-              start={{ x: 0, y: 1 }}
-              end={{ x: 1, y: 1 }}
               style={{
                 width: 173,
                 height: 53,
                 borderRadius: 15,
                 justifyContent: "center",
                 alignItems: "center",
+                backgroundColor: COLORS.gray,
               }}
             >
-              <View
+              <McText h4 style={{ color: COLORS.darkGray }}>
+                Buy Ticket
+              </McText>
+            </View>
+          ) : (
+            <TouchableOpacity
+              onPress={addEventToCart}
+              style={{ marginLeft: "auto" }}
+            >
+              <LinearGradient
+                colors={COLORS.linear}
+                start={{ x: 0, y: 1 }}
+                end={{ x: 1, y: 1 }}
                 style={{
-                  flexDirection: "row",
+                  width: 173,
+                  height: 53,
+                  borderRadius: 15,
                   justifyContent: "center",
                   alignItems: "center",
                 }}
               >
-                <McText h4>Buy Ticket</McText>
-                <McIcon
-                  source={icons.buy_ticket}
-                  size={24}
-                  style={{ marginLeft: 11 }}
-                />
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <McText h4>Buy Ticket</McText>
+                  <McIcon
+                    source={icons.buy_ticket}
+                    size={24}
+                    style={{ marginLeft: 11 }}
+                  />
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
         </View>
       </BottomBarSection>
     </View>

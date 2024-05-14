@@ -31,7 +31,6 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const admin = require("./routes/admin");
 
 //import Middlewares
-
 const helmet = require("helmet");
 const compression = require("compression");
 const config = require("config");
@@ -95,8 +94,8 @@ app.use("/admin", express.static("uploads"));
 db.connectToDatabase();
 
 //User App
-app.use("/api/events", upload.single("image"), EventRoutes);
-app.use("/api/user", upload.single("image"), userRoute);
+app.use("/api/events", EventRoutes);
+app.use("/api/user", userRoute);
 app.use("/api/orders", orderRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/organizer", organizerRoutes);
@@ -108,7 +107,7 @@ app.use("/api/eventTypes", eventTypeRoutes);
 
 //Admin app
 app.use("/api/v2/admin", admin);
-app.use("/api/v2/events", upload.single("image"), EventRoutes);
+app.use("/api/v2/events", EventRoutes);
 app.use("/api/v2/user", userRoute);
 app.use("/api/v2/categories", categoryRoutes);
 app.use("/api/v2/eventTypes", eventTypeRoutes);

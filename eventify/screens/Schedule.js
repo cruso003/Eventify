@@ -50,6 +50,20 @@ const ScheduleScreen = () => {
           calendarBackground: "black",
           reservationsBackgroundColor: "#000",
         }}
+        renderEmptyDate={() => {
+          return (
+            <View style={styles.emptyDateContainer}>
+              <Text style={styles.emptyDateText}>No events for this day</Text>
+            </View>
+          );
+        }}
+        renderEmptyData={() => {
+          return (
+            <View style={styles.emptyDateContainer}>
+              <Text style={styles.emptyDateText}>No events for this day</Text>
+            </View>
+          );
+        }}
       />
     </View>
   );
@@ -73,6 +87,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#000",
+  },
+  emptyDateContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyDateText: {
+    color: "#fff",
+    fontSize: 20,
   },
 });
 
