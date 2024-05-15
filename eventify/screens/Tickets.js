@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,14 +7,83 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { COLORS, dummyData } from "../constants";
 import { McText } from "../components";
 import QRCode from "react-native-qrcode-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import moment from "moment";
+import ordersApi from "../api/orders";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import events from "../api/events";
+
 const TicketScreen = () => {
   const navigation = useNavigation();
+  const [orders, setOrders] = useState([]);
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    const getData = async () => {
+      try {
+        const userData = await AsyncStorage.getItem("userData");
+        const parsedUser = JSON.parse(userData);
+        setUserId(parsedUser._id);
+      } catch (error) {
+        console.error("Error retrieving user data:", error);
+      }
+    };
+
+    getData();
+  }, [userId]);
+
+  useEffect(() => {
+    fetchUserTickets();
+  }, []);
+
+  const fetchUserTickets = async () => {
+    try {
+      if (userId) {
+        // Fetch user orders from the API
+        const orderData = await ordersApi.userOrders(userId);
+
+        // Set the fetched orders in state
+        setOrders(orderData.data);
+
+        console.log(orders);
+
+        // Extract event and ticket IDs from orders
+        const eventAndTicketIds = orders.reduce((acc, order) => {
+          order.tickets.forEach((ticket) => {
+            acc.push({
+              eventId: ticket.event,
+              ticketId: ticket.ticketId,
+            });
+          });
+          return acc;
+        }, []);
+
+        console.log(eventAndTicketIds);
+
+        // Now you have an array containing objects with eventId and ticketId
+        // You can use these IDs to fetch their corresponding data
+        // For example:
+        eventAndTicketIds.forEach(async ({ eventId }) => {
+          const eventData = (await events.getEventById(eventId)).data;
+
+          console.log(eventData);
+          //   const ticketData = await fetchTicketData(ticketId);
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching user orders:", error);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchUserTickets();
+    }, [])
+  );
 
   return (
     <View style={styles.container}>

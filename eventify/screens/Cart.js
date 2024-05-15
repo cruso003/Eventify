@@ -51,7 +51,6 @@ const CartPage = ({ navigation }) => {
         text1: "Check an item to checkout.",
         visibilityTime: 3000,
       });
-      console.log("Check an item to checkout.");
     }
   };
 
@@ -141,7 +140,7 @@ const CartPage = ({ navigation }) => {
                     style={{ paddingRight: 10 }}
                   >
                     <Image
-                      source={item?.event.image}
+                      source={{ uri: item?.event.imageUrl }}
                       style={[
                         styles.centerElement,
                         { height: 60, width: 60, backgroundColor: "#eeeeee" },
@@ -156,12 +155,12 @@ const CartPage = ({ navigation }) => {
                     }}
                   >
                     <Text numberOfLines={1} style={{ fontSize: 15 }}>
-                      Event: {item?.event?.title}
+                      Event: {item?.event?.name}
                     </Text>
 
-                    {item && item.ticket && (
+                    {item && item.event && (
                       <Text style={{ color: "#333333", marginBottom: 10 }}>
-                        Ticket Type: {item.ticket.type}
+                        Ticket Type: {item?.ticketName}
                       </Text>
                     )}
                     <Text

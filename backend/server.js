@@ -17,8 +17,11 @@ const upload = multer({ storage: storage });
 //import Controllers
 const eventController = require("./controllers/eventControllers");
 const userController = require("./controllers/userController");
+const bannerController = require("./controllers/bannerController");
+
 //import Routes
 const EventRoutes = require("./routes/eventRoutes");
+const bannerRoutes = require("./routes/bannerRoutes");
 const userRoute = require("./routes/userRoutes");
 const paymentRoute = require("./routes/paymentRoutes");
 const orderRoutes = require("./routes/orderRoutes");
@@ -66,6 +69,9 @@ app.set("io", io);
 // Use commonMiddleware for the /api/events route
 app.post("/api/events", upload.single("image"), eventController.createEvent);
 
+// Use commonMiddleware for the /api/categories route
+app.post("/api/banners", upload.single("image"), bannerController.uploadBanner);
+
 // Use commonMiddleware for the /api/user route
 app.post("/api/user", upload.single("image"), userController.uploadAvatar);
 
@@ -107,7 +113,9 @@ app.use("/api/eventTypes", eventTypeRoutes);
 
 //Admin app
 app.use("/api/v2/admin", admin);
-app.use("/api/v2/events", EventRoutes);
+app.use("/api/v2/events", upload.single("image"), EventRoutes);
+app.use("/api/v2/banners", upload.single("image"), bannerRoutes);
+app.use("/api/v2/orders", orderRoutes);
 app.use("/api/v2/user", userRoute);
 app.use("/api/v2/categories", categoryRoutes);
 app.use("/api/v2/eventTypes", eventTypeRoutes);

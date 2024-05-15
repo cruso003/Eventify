@@ -23,6 +23,18 @@ exports.createOrder = async (req, res) => {
   }
 };
 
+// Get orders for a specific user
+exports.getOrdersByUserId = async (req, res) => {
+  const userId = req.params.userId;
+
+  try {
+    const orders = await Order.find({ user: userId });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Get a single order by ID
 exports.getOrderById = async (req, res) => {
   try {

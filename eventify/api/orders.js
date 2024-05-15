@@ -1,13 +1,19 @@
+// API file
 import client from "./client";
 
 const endpoint = "/orders";
 
 const placeOrder = (orderDetails) =>
   client.post(`${endpoint}/place-order`, orderDetails);
-const getOrders = (orders) => client.get(`${endpoint}/get-orders`, orders);
+
+const getOrders = () => client.get(`${endpoint}`); // Adjusted endpoint
+
 const cancelOrder = (id) => client.delete(`${endpoint}/cancel-order/${id}`);
-const userOrders = () => client.get(`${endpoint}/user-orders/`);
-const storeOrders = () => client.get(`${endpoint}/store-orders`, storeOrders);
+
+const userOrders = (userId) => client.get(`${endpoint}/user/${userId}`); // Accept userId as parameter
+
+const storeOrders = () => client.get(`${endpoint}/store-orders`);
+
 const virtualOrder = (virtualOrder) =>
   client.post(`${endpoint}/place-virtual-order`, virtualOrder);
 

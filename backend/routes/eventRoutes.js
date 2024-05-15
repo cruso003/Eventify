@@ -10,6 +10,9 @@ router.get("/", eventController.getAllEvents);
 // Add a new event
 router.post("/add-event", eventController.createEvent);
 
+// Get an event by ID
+router.get("/:id", eventController.getEventById);
+
 // Delete an event by ID
 router.delete("/:id", eventController.deleteEventById);
 

@@ -12,7 +12,7 @@ const CartProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(false);
 
-  /*const getData = async () => {
+  const getData = async () => {
     const userData = await AsyncStorage.getItem("userData");
     const parsedUser = JSON.parse(userData);
     setUser(parsedUser);
@@ -29,11 +29,11 @@ const CartProvider = ({ children }) => {
       setLoading(true);
       if (user) {
         const response = await cartApi.getUserCartItems(userId);
-        //console.log(response);
+
         if (Array.isArray(response.data)) {
           setCart(response.data);
         } else {
-          //console.error("Invalid response data");
+          console.error("Invalid response data");
         }
       } else {
         setCart([]);
@@ -60,9 +60,8 @@ const CartProvider = ({ children }) => {
       setCart([]);
     }
   }, [user]);
-  */
 
-  const addToCart = (cartItem) => {
+  /* const addToCart = (cartItem) => {
     const updatedCartItem = {
       ...cartItem,
       qty: 1,
@@ -71,9 +70,9 @@ const CartProvider = ({ children }) => {
     };
     const updatedCart = [...cart, updatedCartItem];
     setCart(updatedCart);
-  };
+  };*/
 
-  /*const addToCart = async (cartItem) => {
+  const addToCart = async (cartItem) => {
     try {
       if (user) {
         const response = await cartApi.addToCart(cartItem);
@@ -88,29 +87,58 @@ const CartProvider = ({ children }) => {
           ...cartItem,
           qty: 1,
           checked: true,
+          salePrice: cartItem?.ticket?.price,
         };
         const updatedCart = [...cart, updatedCartItem];
-        setCart(updatedCart); // Using callback form of setCart
-        console.log(cart); // Logging inside the callback to see updated state
+        setCart(updatedCart);
       }
     } catch (error) {
       console.error("Error adding item to cart: ", error);
     }
-  };*/
+  };
 
-  const addToCartWithAmount = (amount) => {
-    // Add wallet top-up to the cart
-    const cartItem = {
-      product: {
-        name: "Wallet Top-Up",
-        images: [
-          "https://th.bing.com/th/id/R.b05f3d77dfeb33dccf4ddd130f82f239?rik=djTPPXe8ri8zgQ&pid=ImgRaw&r=0",
-        ],
-        description: "Add money to your wallet",
-      },
-      amount: parseFloat(amount), // Convert amount to float
-    };
-    addToCart(cartItem);
+  const addToCartWithAmount = async (amount) => {
+    try {
+      // If user is logged in, add the wallet top-up to the cart and send it to the server
+      if (user) {
+        const cartItem = {
+          event: null, // Since this is a wallet top-up, event can be null
+          salePrice: parseFloat(amount), // Convert amount to float
+          ticket: null, // No ticket for wallet top-up
+          topUp: {
+            name: "Wallet Top-Up",
+            image:
+              "https://th.bing.com/th/id/R.b05f3d77dfeb33dccf4ddd130f82f239?rik=djTPPXe8ri8zgQ&pid=ImgRaw&r=0",
+            description: "Add money to your wallet",
+            amount: parseFloat(amount), // Convert amount to float
+          },
+        };
+
+        // Add the wallet top-up to the cart
+        const response = await cartApi.addToCart(cartItem);
+        if (response.data) {
+          // Refresh cart data after adding item
+          await fetchCartItems();
+        } else {
+          console.error("Error: Response data is null or undefined");
+        }
+      } else {
+        // If user is not logged in, just add the item to the cart locally
+        const updatedCartItem = {
+          topUp: {
+            name: "Wallet Top-Up",
+            image:
+              "https://th.bing.com/th/id/R.b05f3d77dfeb33dccf4ddd130f82f239?rik=djTPPXe8ri8zgQ&pid=ImgRaw&r=0",
+            description: "Add money to your wallet",
+            amount: parseFloat(amount), // Convert amount to float
+          },
+        };
+        const updatedCart = [...cart, updatedCartItem];
+        setCart(updatedCart);
+      }
+    } catch (error) {
+      console.error("Error adding wallet top-up to cart: ", error);
+    }
   };
 
   const selectHandler = (index, checked) => {

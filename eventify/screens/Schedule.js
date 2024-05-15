@@ -1,16 +1,38 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { Agenda } from "react-native-calendars";
 import { useNavigation } from "@react-navigation/native"; // Import useNavigation hook from React Navigation
 import { dummyData } from "../constants";
 import moment from "moment";
+import eventsApi from "../api/events";
 
 const ScheduleScreen = () => {
-  const navigation = useNavigation(); // Initialize navigation object
+  const navigation = useNavigation();
+  const [events, setEvents] = useState([]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+  const fetchEvents = async () => {
+    try {
+      // Fetch events from the API
+      const eventsData = await eventsApi.getEvents();
+
+      // Set the fetched events in state
+      setEvents(
+        eventsData.data.map((event) => ({
+          ...event,
+          date: moment(event.startingTime).format("YYYY-MM-DD"), // Extracting date in YYYY-MM-DD format
+        }))
+      );
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    }
+  };
 
   // Format events data for Agenda component
-  const formattedEvents = dummyData.Events.reduce((acc, event) => {
-    const date = event.startingTime.split(" ")[0].replace(/\//g, "-");
+  const formattedEvents = events.reduce((acc, event) => {
+    const date = event.date;
     if (acc[date]) {
       acc[date].push(event);
     } else {
@@ -34,14 +56,14 @@ const ScheduleScreen = () => {
               key={item.id}
               onPress={() => handleEventPress(item)}
             >
-              <Text style={styles.eventTitle}>{item.title}</Text>
+              <Text style={styles.eventTitle}>{item.name}</Text>
               <Text style={styles.eventTime}>
                 STARTING{" "}
                 {moment(item.startingTime, "YYYY/MM/DD hh:mm A").format(
                   "hh:mm A"
                 )}
               </Text>
-              <Text style={styles.eventTime}>Event type: {item.type}</Text>
+              <Text style={styles.eventTime}>Event type: {item.category}</Text>
             </TouchableOpacity>
           );
         }}

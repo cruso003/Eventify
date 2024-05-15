@@ -10,10 +10,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const DrawerList = [
   //{ icon: "add-outline", label: "Upload Event", navigateTo: "Add-Event" },
   { icon: "qr-code-outline", label: "QR Scanner", onPress: () => {} },
-  /*{
-    icon: "add-circle-outline",
-    label: "Add EventTypes",
-    navigateTo: "Add-EventTypes",
+  /* {
+    icon: "wallet-outline",
+    label: "Wallet",
+    navigateTo: "Wallet",
   },
   {
     icon: "bag-add-outline",

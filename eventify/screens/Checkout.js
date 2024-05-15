@@ -25,7 +25,6 @@ import ordersApi from "../api/orders";
 import uuid from "react-native-uuid";
 import walletApi from "../api/wallet";
 import cartApi from "../api/cart";
-import { useAuth } from "../auth/context";
 import { useCart } from "../components/context/CartContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -37,25 +36,40 @@ function Checkout({ route, navigation }) {
   const [walletBalance, setWalletBalance] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [user, setUser] = useState(false);
+  const [user, setUser] = useState([]);
+  const [userID, setUserID] = useState(null);
 
-  const getData = async () => {
-    const userData = await AsyncStorage.getItem("userData");
-
-    setUser(JSON.parse(userData));
-  };
   useEffect(() => {
+    const getData = async () => {
+      try {
+        const userData = await AsyncStorage.getItem("userData");
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+        setUserID(parsedUser._id);
+        // Once user state is set, initialize stepTwo
+        setStepTwo({
+          fullName: parsedUser ? parsedUser.name : "",
+          profession: parsedUser ? parsedUser.profession : "",
+          sex: parsedUser ? parsedUser.sex : "",
+          phone: parsedUser ? parsedUser.phoneNumber : "",
+          emailAddress: parsedUser ? parsedUser.email : "",
+        });
+      } catch (error) {
+        console.error("Error retrieving user data:", error);
+      }
+    };
+
     getData();
   }, []);
 
   useEffect(() => {
     // Fetch wallet balance when the component mounts
-    fetchWalletBalance();
+    //fetchWalletBalance();
   }, []);
 
   const fetchWalletBalance = async () => {
     try {
-      const response = await walletApi.getWalletBalance(user._id);
+      const response = await walletApi.getWalletBalance(userID);
       if (response.ok) {
         setWalletBalance(response.data.balance);
       }
@@ -145,11 +159,11 @@ function Checkout({ route, navigation }) {
       name: "Bank Card",
       icon: require("../assets/cards.jpg"),
     },
-    {
+    /*{
       id: "wallet",
       name: `Wallet balance: $${walletBalance.toFixed(2)}`,
       icon: require("../assets/wallet.jpg"),
-    },
+    },*/
     {
       id: "mobileMoney",
       name: "Mobile Money",
@@ -186,7 +200,6 @@ function Checkout({ route, navigation }) {
     }
 
     try {
-      console.log(totalAmount);
       // Make the request to pay without client ID and secret
       const response = await paymentApi.requestToPay(
         totalAmount.toString(),
@@ -222,13 +235,13 @@ function Checkout({ route, navigation }) {
         case "mobileMoney":
           await handleMobileMoneyPayment();
           break;
-        case "wallet":
+        /*case "wallet":
           if (walletBalance >= calculateGrandTotal()) {
             // Deduct the total amount from the wallet balance
             const updatedBalance = walletBalance - calculateGrandTotal();
             // Update the wallet balance in the backend
             const response = await walletApi.updateWalletBalance(
-              user._id,
+              userID,
               -calculateGrandTotal()
             );
             if (response.ok) {
@@ -237,7 +250,6 @@ function Checkout({ route, navigation }) {
               // Move to the next step
               setCurrentStep(currentStep + 1);
               // Display success message or navigate to the next step
-              // (This can be handled in your component logic)
             } else {
               // Handle error if updating wallet balance fails
               console.error("Failed to update wallet balance:", response.error);
@@ -246,7 +258,7 @@ function Checkout({ route, navigation }) {
           } else {
             alert("Insufficient balance in your wallet");
           }
-          break;
+          break;*/
         default:
           break;
       }
@@ -279,12 +291,12 @@ function Checkout({ route, navigation }) {
       }
 
       // Attempt to remove items from backend cart
-      const response = await cartApi.removeCartItems(user._id, itemIds);
+      const response = await cartApi.removeCartItems(userID, itemIds);
 
       // Check response status code
       if (response && response.status === 200) {
         // Fetch the updated cart data from the backend
-        const updatedCartResponse = await cartApi.getUserCartItems(user._id);
+        const updatedCartResponse = await cartApi.getUserCartItems(userID);
 
         // Check the updated cart response
         if (Array.isArray(updatedCartResponse.data)) {
@@ -312,19 +324,13 @@ function Checkout({ route, navigation }) {
     cartItems: route.params.cartItems,
   });
 
-  // Check if there are any cart items
-  const hasCartItems = stepOne.cartItems && stepOne.cartItems.length > 0;
-
-  // Define an initial `selectedAddress` from the first cart item if there are any items
-  const paidUser = hasCartItems ? stepOne.cartItems[0].user : null;
-
-  // Initialize `stepTwo` based on the `selectedAddress` of the first cart item
+  // Initialize `stepTwo` based on the user saved data
   const [stepTwo, setStepTwo] = useState({
-    fullName: paidUser ? paidUser.name : user.name,
-    profession: paidUser ? paidUser.profession : "",
-    sex: paidUser ? paidUser.sex : "",
-    phone: paidUser ? paidUser.phoneNumber : "",
-    emailAddress: paidUser.email ? paidUser.email : "",
+    fullName: user ? user.name : "",
+    profession: user ? user.profession : "",
+    sex: user ? user.sex : "",
+    phone: user ? user.phoneNumber : "",
+    emailAddress: user ? user.email : "",
   });
 
   const styles = StyleSheet.create({
@@ -537,7 +543,7 @@ function Checkout({ route, navigation }) {
                             style={{ paddingRight: 10 }}
                           >
                             <Image
-                              source={item?.event.image}
+                              source={{ uri: item?.event.imageUrl }}
                               style={[
                                 styles.centerElement,
                                 {
@@ -556,13 +562,13 @@ function Checkout({ route, navigation }) {
                             }}
                           >
                             <Text numberOfLines={1} style={{ fontSize: 15 }}>
-                              {item.event.title}
+                              {item.event.name}
                             </Text>
                             {item && item.ticket && (
                               <Text
                                 style={{ color: "#333333", marginBottom: 10 }}
                               >
-                                Ticket Type: {item.ticket.type}
+                                Ticket Type: {item.ticket.name}
                               </Text>
                             )}
                           </View>
@@ -843,7 +849,7 @@ function Checkout({ route, navigation }) {
                 >
                   <Text style={{ color: "#858585" }}>Event</Text>
                   <Text style={{ fontWeight: "200" }}>
-                    {item.event.title.substr(0, 12) + "..."}
+                    {item.event.name.substr(0, 12) + "..."}
                   </Text>
                 </View>
                 <View
@@ -921,7 +927,8 @@ function Checkout({ route, navigation }) {
                   },
                 ]}
                 onPress={async () => {
-                  /*try {
+                  const totalAmount = calculateGrandTotal().toFixed(2);
+                  try {
                     // Check if it's a virtual order
                     if (stepOne.cartItems.some((item) => item.amount)) {
                       const topUpAmount = stepOne.cartItems.reduce(
@@ -943,24 +950,18 @@ function Checkout({ route, navigation }) {
                     } else {
                       // It's a physical order, create the order
                       const orderDetails = {
-                        products: stepOne.cartItems.map((item) => ({
-                          product: item.product,
-                          store: item.product.store,
+                        tickets: stepOne.cartItems.map((item) => ({
+                          ticketId: item.ticketId,
+                          owner: item.event.owner,
+                          event: item.event._id,
                           quantity: item.qty,
-                          deliveryCharge: item.deliveryFee,
-                          selectedVariations: item.selectedVariations,
-                          deliveryMethod: item.shipmentOption,
-                          paymentMethod: selectedPaymentMethod,
-                          totalAmount:
-                            parseFloat(subtotalPrice().toFixed(2)) +
-                            parseFloat(item.deliveryFee.toFixed(2)),
-                          type: "physical", // Add product type
+                          totalAmount: parseFloat(totalAmount),
                         })),
                         user: user._id,
-                        status: "Delivered", // Assuming the status is set to "Delivered" for physical orders
+                        status: "Pending", // Assuming the status is set to "Delivered" for physical orders
                         payment: {
                           transactionId: transactionId,
-                          type: "Physical",
+                          amount: parseFloat(totalAmount),
                         },
                       };
 
@@ -976,11 +977,7 @@ function Checkout({ route, navigation }) {
                     window.alert(
                       "An error occurred while processing the payment. Please try again later."
                     );
-                  }*/
-                  // After updating the wallet balance and creating the order, navigate to the feature screen
-                  setCart([]);
-                  setCurrentStep({ currentStep: 0 });
-                  navigation.navigate("Featured");
+                  }
                 }}
               >
                 <Text style={{ color: "#fff" }}>Continue Shopping</Text>

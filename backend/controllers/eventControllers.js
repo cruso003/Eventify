@@ -1,13 +1,14 @@
-const NodeGeocoder = require("node-geocoder");
 const Event = require("../model/Events");
+const EventType = require("../model/EventType");
+const Category = require("../model/EventCategory");
+const Organizer = require("../model/Organizer");
+const User = require("../model/User");
 const cloudinary = require("cloudinary").v2;
 
 const options = {
   provider: "google",
   apiKey: "AIzaSyCnqbebQOpYAMedUi-Ct_xKwXmWlMsO_Q4",
 };
-
-const geocoder = NodeGeocoder(options);
 
 // Configure Cloudinary
 cloudinary.config({
@@ -31,12 +32,9 @@ exports.createEvent = async (req, res) => {
   try {
     const file = req.file;
 
-    console.log(req.body, "req.body");
-    console.log(file, "file");
-
     // Upload image to Cloudinary
     const cloudinaryUpload = await cloudinary.uploader.upload(file.path, {
-      folder: "event_images", // Optional: set a folder in Cloudinary
+      folder: "event_images",
     });
 
     const {
@@ -44,45 +42,61 @@ exports.createEvent = async (req, res) => {
       name,
       startingTime,
       description,
-      location,
+      latitude,
+      longitude,
       category,
       tickets,
       owner,
     } = req.body;
 
-    // Perform geocoding to get coordinates
-    geocoder.geocode(location, async function (err, data) {
-      if (err || !data.results || data.results.length === 0) {
-        return res.status(400).json({ error: "Invalid address" });
-      }
+    // Find the ObjectIds for eventType and owner
+    const [eventTypeObj, ownerObj] = await Promise.all([
+      EventType.findOne({ name: eventType }),
+      User.findOne({ businessName: owner }),
+    ]);
 
-      const { lat, lng } = data.results[0].geometry.location;
+    if (!eventTypeObj || !ownerObj) {
+      return res.status(400).json({ error: "Invalid data provided" });
+    }
 
-      // Create a new event with image URL and coordinates
-      const newEvent = new Event({
-        eventType,
-        name,
-        startingTime,
-        image: cloudinaryUpload.secure_url,
-        description,
-        category,
-        tickets,
-        owner,
-        location: {
-          type: "Point",
-          coordinates: [lng, lat],
-        },
-      });
+    // Parse tickets from JSON string to array
+    const parsedTickets = JSON.parse(tickets);
 
-      console.log(newEvent, "newEvent");
-
-      // Save the event to MongoDB
-      const savedEvent = await newEvent.save();
-
-      res.status(201).json(savedEvent);
+    // Create a new event with image URL and coordinates
+    const newEvent = new Event({
+      eventType: eventTypeObj._id,
+      category,
+      owner: ownerObj._id,
+      name,
+      startingTime,
+      imageUrl: cloudinaryUpload.secure_url,
+      description,
+      tickets: parsedTickets,
+      location: {
+        type: "Point",
+        coordinates: [parseFloat(latitude), parseFloat(longitude)],
+      },
     });
+
+    const savedEvent = await newEvent.save();
+
+    res.status(201).json(savedEvent);
   } catch (error) {
+    console.error("Error in createEvent:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// Get an event by ID
+exports.getEventById = async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+    res.json(event);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 

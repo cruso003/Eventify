@@ -31,6 +31,7 @@ import AddEventTypes from "./screens/EventsTypes/AddEventTypes";
 import AddEventCategory from "./screens/EventCategory/AddCategory";
 import { PaperProvider } from "react-native-paper";
 import Search from "./screens/Search";
+import WalletScreen from "./screens/WalletScreen";
 
 const Stack = createNativeStackNavigator();
 const STRIPE_KEY =
@@ -153,18 +154,21 @@ const LoginNavigator = () => {
 
 const DrawerNavigator = () => {
   return (
-    <Drawer.Navigator
-      drawerContent={(props) => <DrawerContent {...props} />}
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Drawer.Screen name="FeaturedDrawerScreen" component={StackNavigator} />
-      <Drawer.Screen name="Add-Event" component={AddEvent} />
-      <Drawer.Screen name="Tickets" component={TicketsScreen} />
-      <Drawer.Screen name="Add-EventTypes" component={AddEventTypes} />
-      <Drawer.Screen name="Add-Category" component={AddEventCategory} />
-    </Drawer.Navigator>
+    <CartProvider>
+      <Drawer.Navigator
+        drawerContent={(props) => <DrawerContent {...props} />}
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Drawer.Screen name="FeaturedDrawerScreen" component={StackNavigator} />
+        <Drawer.Screen name="Add-Event" component={AddEvent} />
+        <Drawer.Screen name="Tickets" component={TicketsScreen} />
+        <Drawer.Screen name="Wallet" component={WalletScreen} />
+        <Drawer.Screen name="Add-EventTypes" component={AddEventTypes} />
+        <Drawer.Screen name="Add-Category" component={AddEventCategory} />
+      </Drawer.Navigator>
+    </CartProvider>
   );
 };
 

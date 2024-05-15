@@ -7,19 +7,32 @@ const CartSchema = new mongoose.Schema({
   },
   items: [
     {
-      ticket: {
+      event: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Ticket",
+        ref: "Event",
         required: true,
       },
       qty: {
         type: Number,
         default: 1,
       },
-      // Add variations if necessary
-      selectedVariations: {
-        type: Object,
-        required: false,
+
+      checked: {
+        type: Boolean,
+        default: true,
+      },
+      salePrice: {
+        type: Number,
+        required: true,
+      },
+      ticketName: {
+        type: String,
+        required: true,
+      },
+      ticketId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Ticket",
+        required: true,
       },
     },
   ],

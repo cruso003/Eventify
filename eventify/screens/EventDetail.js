@@ -52,8 +52,8 @@ const EventDetail = ({ navigation, route }) => {
     setSelectedEvent(selectedEvent);
     // Call function to fetch location name when selectedEvent changes
     fetchLocationName(
-      selectedEvent?.location.latitude,
-      selectedEvent?.location.longitude
+      selectedEvent?.location.coordinates[0],
+      selectedEvent?.location.coordinates[1]
     );
   }, [route.params]);
 
@@ -92,7 +92,8 @@ const EventDetail = ({ navigation, route }) => {
       user: user,
       event: selectedEvent,
       salePrice: selectedTicket.price,
-      ticket: selectedTicket,
+      ticketName: selectedTicket.name,
+      ticketId: selectedTicket._id,
       qty: 1,
       checked: true,
     };
@@ -111,7 +112,9 @@ const EventDetail = ({ navigation, route }) => {
         {/*ImageBackground*/}
         <ImageBackground
           resizeMode="cover"
-          source={selectedEvent?.image}
+          source={
+            selectedEvent?.imageUrl ? { uri: selectedEvent.imageUrl } : null
+          }
           style={{
             width: "100%",
             height:
@@ -176,9 +179,9 @@ const EventDetail = ({ navigation, route }) => {
                 <FooterContentView>
                   <View>
                     <McText body4 style={{ opacity: 0.5, letterSpacing: 2 }}>
-                      {selectedEvent?.type}
+                      {selectedEvent?.category}
                     </McText>
-                    <McText h1>{selectedEvent?.title}</McText>
+                    <McText h1>{selectedEvent?.name}</McText>
                     <McText body5 style={{ opacity: 0.5, letterSpacing: 1.5 }}>
                       STARTING{" "}
                       {moment(
@@ -264,8 +267,8 @@ const EventDetail = ({ navigation, route }) => {
               provider={PROVIDER_GOOGLE}
               style={{ height: 250, marginTop: 20 }}
               region={{
-                latitude: selectedEvent?.location.latitude,
-                longitude: selectedEvent?.location.longitude,
+                latitude: selectedEvent?.location.coordinates[0],
+                longitude: selectedEvent?.location.coordinates[1],
                 latitudeDelta: 0.005,
                 longitudeDelta: 0.005 * (SIZES.width / SIZES.height),
               }}
@@ -273,10 +276,10 @@ const EventDetail = ({ navigation, route }) => {
             >
               <Marker
                 coordinate={{
-                  latitude: selectedEvent?.location.latitude,
-                  longitude: selectedEvent?.location.longitude,
+                  latitude: selectedEvent?.location.coordinates[0],
+                  longitude: selectedEvent?.location.coordinates[1],
                 }}
-                title={selectedEvent?.title + " - " + selectedEvent?.type}
+                title={selectedEvent?.name + " - " + selectedEvent?.category}
                 description={locationName}
               />
             </MapView>
@@ -327,7 +330,7 @@ const EventDetail = ({ navigation, route }) => {
                         : COLORS.black,
                     }}
                   >
-                    {ticket.type}
+                    {ticket.name}
                   </McText>
                   <McText
                     body3

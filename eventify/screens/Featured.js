@@ -27,22 +27,35 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useCart } from "../components/context/CartContext";
 import colors from "../config/colors";
+import eventsApi from "../api/events";
 
 const FeaturedScreen = ({ navigation }) => {
   const cartMain = useCart();
   const cart = cartMain.cart;
   const [cartLength, setCartLength] = useState(0);
+  const [events, setEvents] = useState([]);
 
   useEffect(() => {
     if (cart) {
       // Update cart length when the cart changes
       setCartLength(cart.length);
     }
+    // Fetch real events from your API
+    fetchEvents();
   }, [cart]);
 
-  const handleAccountNavigation = () => {
-    navigation.navigate("Account");
+  const fetchEvents = async () => {
+    try {
+      // Fetch events from the API
+      const eventsData = await eventsApi.getEvents();
+
+      // Set the fetched events in state
+      setEvents(eventsData.data);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    }
   };
+
   const _renderItem = ({ item, index }) => {
     return (
       <TouchableWithoutFeedback
@@ -53,11 +66,11 @@ const FeaturedScreen = ({ navigation }) => {
         <View
           style={{
             marginLeft: index === 0 ? 30 : 20,
-            marginRight: index === dummyData.Events.length - 1 ? 30 : 0,
+            marginRight: index === events.length - 1 ? 30 : 0,
           }}
         >
           <ImageBackground
-            source={item.image}
+            source={{ uri: item.imageUrl }}
             resizeMode="cover"
             borderRadius={20}
             style={{
@@ -79,12 +92,10 @@ const FeaturedScreen = ({ navigation }) => {
                   color={COLORS.black}
                   style={{ opacity: 0.5, letterSpacing: 2 }}
                 >
-                  {moment(item.startingTime, "YYYY/MM/DD hh:mm A")
-                    .format("MMM")
-                    .toUpperCase()}
+                  {moment(item.startingTime).format("MMM").toUpperCase()}
                 </McText>
                 <McText body5 color={COLORS.black}>
-                  {moment(item.startingTime, "YYYY/MM/DD hh:mm A").format("DD")}
+                  {moment(item.startingTime).format("DD")}
                 </McText>
               </DateBox>
             </View>
@@ -95,15 +106,16 @@ const FeaturedScreen = ({ navigation }) => {
               }}
             >
               <McText body5 style={{ opacity: 0.5 }}>
-                {item.type}
+                {item.category}
               </McText>
-              <McText h2>{item.title}</McText>
+              <McText h2>{item.name}</McText>
             </View>
           </ImageBackground>
         </View>
       </TouchableWithoutFeedback>
     );
   };
+
   return (
     <SafeAreaView style={styles.container}>
       {/*Header Section */}
@@ -187,8 +199,8 @@ const FeaturedScreen = ({ navigation }) => {
           horizontal
           contentContainerStyled={{}}
           showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) => "event_" + item.id}
-          data={dummyData.Events}
+          keyExtractor={(item) => "event_" + item._id} // Assuming _id is unique for each event
+          data={events} // Use the real event data fetched from the API
           renderItem={_renderItem}
         ></FlatList>
       </View>

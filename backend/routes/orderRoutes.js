@@ -8,10 +8,13 @@ const orderController = require("../controllers/orderController");
 router.get("/", orderController.getAllOrders);
 
 // Create a new order
-router.post("/", orderController.createOrder);
+router.post("/place-order", orderController.createOrder);
 
 // Get a single order by ID
 router.get("/:id", orderController.getOrderById);
+
+// Get orders for a specific user
+router.get("/user/:userId", orderController.getOrdersByUserId);
 
 // Update an order by ID
 router.put("/:id", orderController.updateOrderById);

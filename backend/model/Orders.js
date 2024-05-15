@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const orderSchema = new mongoose.Schema({
   tickets: [
     {
-      ticket: {
+      ticketId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Ticket",
         required: true,
@@ -12,9 +12,6 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         required: true,
       },
-      selectedVariations: {
-        type: Object,
-      },
       totalAmount: {
         type: Number,
         required: true,
@@ -22,6 +19,11 @@ const orderSchema = new mongoose.Schema({
       event: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Event",
+      },
+      owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
       },
     },
   ],

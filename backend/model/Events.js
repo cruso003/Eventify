@@ -17,11 +17,7 @@ const eventSchema = new mongoose.Schema({
     ref: "EventType",
     required: true,
   },
-  category: {
-    type: mongoose.Schema.Types.String,
-    ref: "Category",
-    required: true,
-  },
+  category: String,
   owner: {
     type: mongoose.Schema.Types.String,
     ref: "Organizer",
@@ -29,7 +25,10 @@ const eventSchema = new mongoose.Schema({
   },
   name: String,
   startingTime: Date,
-  image: String,
+  imageUrl: {
+    type: String,
+    required: true,
+  },
   description: String,
   tickets: [ticketSchema],
   // Add fields for storing coordinates
