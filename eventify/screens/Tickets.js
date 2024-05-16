@@ -6,6 +6,7 @@ import {
   ImageBackground,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { COLORS, dummyData } from "../constants";
@@ -21,68 +22,60 @@ const TicketScreen = () => {
   const navigation = useNavigation();
   const [orders, setOrders] = useState([]);
   const [userId, setUserId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [eventsData, setEventsData] = useState([]);
+  const [eventAndTicketIds, setEventAndTicketIds] = useState([]);
 
   useEffect(() => {
-    const getData = async () => {
+    const fetchUserData = async () => {
       try {
         const userData = await AsyncStorage.getItem("userData");
         const parsedUser = JSON.parse(userData);
         setUserId(parsedUser._id);
+        const orderData = await ordersApi.userOrders(parsedUser._id);
+        setOrders(orderData.data);
       } catch (error) {
         console.error("Error retrieving user data:", error);
       }
     };
 
-    getData();
-  }, [userId]);
-
-  useEffect(() => {
-    fetchUserTickets();
+    fetchUserData();
   }, []);
 
   const fetchUserTickets = async () => {
+    if (!userId) return;
+
+    setLoading(true);
     try {
-      if (userId) {
-        // Fetch user orders from the API
-        const orderData = await ordersApi.userOrders(userId);
-
-        // Set the fetched orders in state
-        setOrders(orderData.data);
-
-        console.log(orders);
-
-        // Extract event and ticket IDs from orders
-        const eventAndTicketIds = orders.reduce((acc, order) => {
-          order.tickets.forEach((ticket) => {
-            acc.push({
-              eventId: ticket.event,
-              ticketId: ticket.ticketId,
-            });
+      const eventAndTicketIdsTemp = orders.reduce((acc, order) => {
+        order.tickets.forEach((ticket) => {
+          acc.push({
+            eventId: ticket.event,
+            ticketId: ticket.ticketId,
           });
-          return acc;
-        }, []);
-
-        console.log(eventAndTicketIds);
-
-        // Now you have an array containing objects with eventId and ticketId
-        // You can use these IDs to fetch their corresponding data
-        // For example:
-        eventAndTicketIds.forEach(async ({ eventId }) => {
-          const eventData = (await events.getEventById(eventId)).data;
-
-          console.log(eventData);
-          //   const ticketData = await fetchTicketData(ticketId);
         });
-      }
+        return acc;
+      }, []);
+
+      setEventAndTicketIds(eventAndTicketIdsTemp); // set the eventAndTicketIds state here
+
+      const promises = eventAndTicketIdsTemp.map(async ({ eventId }) => {
+        return (await events.getEventById(eventId)).data;
+      });
+
+      const eventData = await Promise.all(promises);
+      setEventsData(eventData);
     } catch (error) {
       console.error("Error fetching user orders:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   useFocusEffect(
     React.useCallback(() => {
       fetchUserTickets();
-    }, [])
+    }, [userId, orders])
   );
 
   return (
@@ -91,63 +84,84 @@ const TicketScreen = () => {
         <Text style={styles.headerTitle}>My Tickets</Text>
       </View>
       <ScrollView style={styles.ticketContainer}>
-        {dummyData.Events.map((event) => (
-          <TouchableOpacity
-            key={event.id}
-            style={styles.ticket}
-            onPress={() => navigation.navigate("EventDetail", { event })}
-          >
-            <ImageBackground source={event.image} style={styles.ticketBGImage}>
-              <LinearGradient
-                colors={COLORS.linear}
-                style={styles.linearGradient}
+        {eventsData.length === 0 || loading ? (
+          <View style={styles.loadingIndicator}>
+            <ActivityIndicator size="large" color={COLORS.white} />
+          </View>
+        ) : (
+          eventsData.map((event) => {
+            const ticketId = eventAndTicketIds.find(
+              (item) => item.eventId === event._id
+            )?.ticketId;
+            const ticket = event.tickets.find(
+              (ticket) => ticket._id === ticketId
+            );
+            const qrIdentifier = ticket?.qrIdentifier;
+            return (
+              <TouchableOpacity
+                key={event._id}
+                style={styles.ticket}
+                onPress={() => {
+                  navigation.navigate("EventDetail", { selectedEvent: event });
+                }}
               >
-                <View
-                  style={[
-                    styles.blackCircle,
-                    { position: "absolute", bottom: -40, left: -40 },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.blackCircle,
-                    { position: "absolute", bottom: -40, right: -40 },
-                  ]}
-                />
-              </LinearGradient>
-            </ImageBackground>
-            <LinearGradient colors={COLORS.linear} style={styles.ticketFooter}>
-              <View
-                style={[
-                  styles.blackCircle,
-                  { position: "absolute", top: -40, left: -40 },
-                ]}
-              />
-              <View
-                style={[
-                  styles.blackCircle,
-                  { position: "absolute", top: -40, right: -40 },
-                ]}
-              />
-              <View style={styles.ticketDateContainer}>
-                <View style={styles.ticketDetails}>
-                  <McText>{event.title}</McText>
-                  <McText>{event.type}</McText>
-                  <McText>
-                    {moment(event.startingTime, "YYYY/MM/DD hh:mm A").format(
-                      "MMM"
-                    )}{" "}
-                    {moment(event.startingTime, "YYYY/MM/DD hh:mm A").format(
-                      "DD"
-                    )}
-                  </McText>
-                  <McText>{event.startingTime}</McText>
-                </View>
-              </View>
-              <QRCode value={event.qrCode} size={100} />
-            </LinearGradient>
-          </TouchableOpacity>
-        ))}
+                <ImageBackground
+                  source={{ uri: event.imageUrl }}
+                  style={styles.ticketBGImage}
+                >
+                  <LinearGradient
+                    colors={COLORS.linear}
+                    style={styles.linearGradient}
+                  >
+                    <View
+                      style={[
+                        styles.blackCircle,
+                        { position: "absolute", bottom: -40, left: -40 },
+                      ]}
+                    />
+                    <View
+                      style={[
+                        styles.blackCircle,
+                        { position: "absolute", bottom: -40, right: -40 },
+                      ]}
+                    />
+                  </LinearGradient>
+                </ImageBackground>
+                <LinearGradient
+                  colors={COLORS.linear}
+                  style={styles.ticketFooter}
+                >
+                  <View
+                    style={[
+                      styles.blackCircle,
+                      { position: "absolute", top: -40, left: -40 },
+                    ]}
+                  />
+                  <View
+                    style={[
+                      styles.blackCircle,
+                      { position: "absolute", top: -40, right: -40 },
+                    ]}
+                  />
+                  <View style={styles.ticketDateContainer}>
+                    <View style={styles.ticketDetails}>
+                      <McText>{event.name}</McText>
+                      <McText>{event.category}</McText>
+                      <McText>
+                        {moment(event.startingTime).format("MMM")}{" "}
+                        {moment(event.startingTime).format("DD")}
+                      </McText>
+                      <McText>
+                        {moment(event.startingTime).format("hh:mm A")}
+                      </McText>
+                    </View>
+                  </View>
+                  <QRCode value={qrIdentifier} size={100} />
+                </LinearGradient>
+              </TouchableOpacity>
+            );
+          })
+        )}
         <View style={{ paddingBottom: 150 }}></View>
       </ScrollView>
     </View>

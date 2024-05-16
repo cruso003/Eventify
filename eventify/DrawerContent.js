@@ -8,20 +8,18 @@ import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const DrawerList = [
-  //{ icon: "add-outline", label: "Upload Event", navigateTo: "Add-Event" },
-  { icon: "qr-code-outline", label: "QR Scanner", onPress: () => {} },
+  {
+    icon: "qr-code-outline",
+    label: "QR Scanner",
+    navigateTo: "QRScanner",
+  },
   /* {
     icon: "wallet-outline",
     label: "Wallet",
     navigateTo: "Wallet",
   },
-  {
-    icon: "bag-add-outline",
-    label: "Add Event Category",
-    navigateTo: "Add-Category",
-  },*/
+*/
   { icon: "ticket-outline", label: "My Tickets", navigateTo: "Tickets" },
-  { icon: "calendar-outline", label: "My Events", navigateTo: "Tickets" },
   { icon: "share-outline", label: "Invite Friends", onPress: () => {} },
   { icon: "help-circle-outline", label: "Help & Support", onPress: () => {} },
   //{ icon: "settings-outline", label: "Settings", onPress: () => {} },
@@ -41,13 +39,20 @@ const DrawerLayout = ({ icon, label, navigateTo }) => {
 };
 
 const DrawerItems = (props) => {
-  return DrawerList.map((el, i) => {
+  const userRole = props.user?.role;
+
+  return DrawerList.filter((item) => {
+    if (item.label === "QR Scanner") {
+      return userRole === "organizer" || userRole === "admin";
+    }
+    return true; // show all other items by default
+  }).map((item, i) => {
     return (
       <DrawerLayout
         key={i}
-        icon={el.icon}
-        label={el.label}
-        navigateTo={el.navigateTo}
+        icon={item.icon}
+        label={item.label}
+        navigateTo={item.navigateTo}
       />
     );
   });
@@ -97,7 +102,7 @@ function DrawerContent(props) {
             </View>
           </TouchableOpacity>
           <View style={styles.drawerSection}>
-            <DrawerItems />
+            <DrawerItems user={user} />
           </View>
         </View>
       </DrawerContentScrollView>

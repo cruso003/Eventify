@@ -32,6 +32,7 @@ import AddEventCategory from "./screens/EventCategory/AddCategory";
 import { PaperProvider } from "react-native-paper";
 import Search from "./screens/Search";
 import WalletScreen from "./screens/WalletScreen";
+import QRScannerScreen from "./screens/QRScannerScreen";
 
 const Stack = createNativeStackNavigator();
 const STRIPE_KEY =
@@ -163,6 +164,7 @@ const DrawerNavigator = () => {
       >
         <Drawer.Screen name="FeaturedDrawerScreen" component={StackNavigator} />
         <Drawer.Screen name="Add-Event" component={AddEvent} />
+        <Drawer.Screen name="QRScanner" component={QRScannerScreen} />
         <Drawer.Screen name="Tickets" component={TicketsScreen} />
         <Drawer.Screen name="Wallet" component={WalletScreen} />
         <Drawer.Screen name="Add-EventTypes" component={AddEventTypes} />
