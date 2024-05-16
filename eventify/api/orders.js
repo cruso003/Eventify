@@ -10,8 +10,8 @@ const getOrders = () => client.get(`${endpoint}`); // Adjusted endpoint
 
 const cancelOrder = (id) => client.delete(`${endpoint}/cancel-order/${id}`);
 
-const userOrders = (userId) => client.get(`${endpoint}/user/${userId}`); // Accept userId as parameter
-
+const userOrders = (userId) => client.get(`${endpoint}/user/${userId}`);
+const getOrderbyQRIdentifier = (qrId) => client.get(`${endpoint}/qr/${qrId}`);
 const storeOrders = () => client.get(`${endpoint}/store-orders`);
 
 const virtualOrder = (virtualOrder) =>
@@ -22,6 +22,7 @@ export default {
   getOrders,
   cancelOrder,
   userOrders,
+  getOrderbyQRIdentifier,
   storeOrders,
   virtualOrder,
 };

@@ -1,4 +1,4 @@
-const Ticket = require("../model/Ticket");
+const Ticket = require("./Ticket");
 
 // Controller for handling ticket-related operations
 

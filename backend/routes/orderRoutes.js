@@ -16,6 +16,8 @@ router.get("/:id", orderController.getOrderById);
 // Get orders for a specific user
 router.get("/user/:userId", orderController.getOrdersByUserId);
 
+router.get("/qr/:qrIdentifier", orderController.getOrderbyQRIdentifier);
+
 // Update an order by ID
 router.put("/:id", orderController.updateOrderById);
 

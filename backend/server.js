@@ -29,7 +29,6 @@ const cartRoutes = require("./routes/cartRoutes");
 const walletRoutes = require("./routes/walletRoutes");
 const organizerRoutes = require("./routes/organizerRoutes");
 const eventTypeRoutes = require("./routes/eventTypeRoutes");
-const ticketRoutes = require("./routes/ticketRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const admin = require("./routes/admin");
 
@@ -107,7 +106,6 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/organizer", organizerRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/payments", paymentRoute);
-app.use("/api/tickets", ticketRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/eventTypes", eventTypeRoutes);
 

@@ -1,3 +1,4 @@
+const Event = require("../model/Events");
 const Order = require("../model/Orders");
 
 // Controller for handling order-related operations
@@ -20,6 +21,38 @@ exports.createOrder = async (req, res) => {
     res.status(201).json(savedOrder);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+// Get order by QR identifier
+exports.getOrderbyQRIdentifier = async (req, res) => {
+  const qrIdentifier = req.params.qrIdentifier;
+
+  try {
+    // Find the event by QR identifier
+    const event = await Event.findOne({ "tickets.qrIdentifier": qrIdentifier });
+
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // Find the ticket within the event
+    const ticket = event.tickets.find((t) => t.qrIdentifier === qrIdentifier);
+
+    if (!ticket) {
+      return res.status(404).json({ message: "Ticket not found" });
+    }
+
+    // Find the order that contains the ticket
+    const order = await Order.findOne({ "tickets.ticketId": ticket._id });
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 

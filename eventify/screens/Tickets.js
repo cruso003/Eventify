@@ -84,11 +84,11 @@ const TicketScreen = () => {
         <Text style={styles.headerTitle}>My Tickets</Text>
       </View>
       <ScrollView style={styles.ticketContainer}>
-        {eventsData.length === 0 || loading ? (
+        {loading ? (
           <View style={styles.loadingIndicator}>
             <ActivityIndicator size="large" color={COLORS.white} />
           </View>
-        ) : (
+        ) : eventsData.length > 0 ? (
           eventsData.map((event) => {
             const ticketId = eventAndTicketIds.find(
               (item) => item.eventId === event._id
@@ -161,6 +161,20 @@ const TicketScreen = () => {
               </TouchableOpacity>
             );
           })
+        ) : (
+          <View style={styles.noEventsContainer}>
+            <Text style={styles.noEventsText}>
+              Oops! You dont have any tickets yet.
+            </Text>
+            <TouchableOpacity
+              style={styles.noEventsButton}
+              onPress={() => {
+                navigation.navigate("Featured");
+              }}
+            >
+              <Text style={styles.noEventsButtonText}>Go to Home</Text>
+            </TouchableOpacity>
+          </View>
         )}
         <View style={{ paddingBottom: 150 }}></View>
       </ScrollView>
@@ -225,6 +239,29 @@ const styles = StyleSheet.create({
     width: 80,
     borderRadius: 80,
     backgroundColor: COLORS.black,
+  },
+  noEventsContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noEventsText: {
+    fontSize: 18,
+    color: COLORS.white,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  noEventsButton: {
+    //backgroundColor: COLORS.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderColor: "gray",
+    borderWidth: 1,
+  },
+  noEventsButtonText: {
+    fontSize: 16,
+    color: COLORS.white,
   },
 });
 

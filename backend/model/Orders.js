@@ -8,6 +8,12 @@ const orderSchema = new mongoose.Schema({
         ref: "Ticket",
         required: true,
       },
+      ticketName: {
+        type: String,
+      },
+      ticketPrice: {
+        type: String,
+      },
       quantity: {
         type: Number,
         required: true,
@@ -20,6 +26,8 @@ const orderSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Event",
       },
+      eventName: String,
+      eventCategory: String,
       owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -33,7 +41,7 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    default: "Pending",
+    default: "Success",
     // You can use an enum to restrict possible values if needed
     enum: ["Pending", "Success", "Failed"],
   },

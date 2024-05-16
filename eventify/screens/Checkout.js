@@ -952,8 +952,12 @@ function Checkout({ route, navigation }) {
                       const orderDetails = {
                         tickets: stepOne.cartItems.map((item) => ({
                           ticketId: item.ticketId,
+                          ticketName: item.ticketName,
+                          ticketPrice: item.salePrice,
                           owner: item.event.owner,
                           event: item.event._id,
+                          eventName: item.event.name,
+                          eventCategory: item.event.category,
                           quantity: item.qty,
                           totalAmount: parseFloat(totalAmount),
                         })),
