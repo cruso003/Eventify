@@ -17,6 +17,7 @@ router.post(
   "/verify-otp-and-reset-password",
   userController.verifyOtpAndResetPassword
 );
+router.put("/:userId/interests", userController.updateUserInterests);
 router.post("/resend-security-code", userController.resendSecurityCode);
 router.delete("/:email", userController.deleteUserByEmail);
 

@@ -12,6 +12,11 @@ const loginUser = (credentials) =>
 const forgotPassword = (email) =>
   client.post(`${endpoint}/forgot-password`, { email });
 
+const updateUserInterests = (userId, selectedInterests) =>
+  client.put(`${endpoint}/${userId}/interests`, {
+    interests: selectedInterests,
+  });
+
 const verifyOtpAndResetPassword = (email, securityCode, newPassword) =>
   client.post(`${endpoint}/verify-otp-and-reset-password`, {
     email,
@@ -35,4 +40,5 @@ export default {
   resendSecurityCode,
   updateUser,
   uploadAvatar,
+  updateUserInterests,
 };

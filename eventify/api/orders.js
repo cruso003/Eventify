@@ -17,6 +17,9 @@ const storeOrders = () => client.get(`${endpoint}/store-orders`);
 const virtualOrder = (virtualOrder) =>
   client.post(`${endpoint}/place-virtual-order`, virtualOrder);
 
+const getUsersById = (userIds) =>
+  client.get(`${endpoint}/getUsersByIds`, { userIds });
+
 export default {
   placeOrder,
   getOrders,
@@ -25,4 +28,5 @@ export default {
   getOrderbyQRIdentifier,
   storeOrders,
   virtualOrder,
+  getUsersById,
 };

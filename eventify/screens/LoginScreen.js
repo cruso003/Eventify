@@ -32,12 +32,32 @@ const LoginScreen = () => {
       };
 
       const response = await userApi.loginUser(credentials);
-      // Handle successful login, e.g., store user data in context
-      const data = await response.data.user;
-      //save user data to AsyncStorage
-      AsyncStorage.setItem("userData", JSON.stringify(data));
-      AsyncStorage.setItem("isLoggedIn", JSON.stringify(true));
-      navigation.navigate("FeaturedScreen"); // Navigate to the home screen or any other screen
+
+      if (response.data.success) {
+        // Handle successful login
+        const data = response.data.user;
+        AsyncStorage.setItem("userData", JSON.stringify(data));
+        AsyncStorage.setItem("isLoggedIn", JSON.stringify(true));
+
+        // Check if user has selected their interests
+        const hasSelectedInterests =
+          data.selectedInterests && data.selectedInterests.length > 0;
+
+        if (hasSelectedInterests) {
+          navigation.navigate("FeaturedScreen");
+        } else {
+          navigation.navigate("CategorySelectionScreen");
+        }
+      } else {
+        // Handle unsuccessful login (incorrect email or password)
+        Toast.show({
+          type: "error",
+          text1: response.data.message
+            ? response.data.message
+            : "Something went wrong",
+          visibilityTime: 3000,
+        });
+      }
     } catch (error) {
       console.error(
         "Error during login:",
@@ -46,9 +66,7 @@ const LoginScreen = () => {
       Toast.show({
         type: "error",
         text1:
-          error.response?.data?.message ||
-          error.message ||
-          "An error occurred during login",
+          error.response?.data?.message || "An error occurred during login",
         visibilityTime: 3000,
       });
     } finally {
@@ -60,7 +78,7 @@ const LoginScreen = () => {
     <SafeAreaView style={styles.container}>
       <Image
         style={styles.image}
-        source={require("../assets/eventify-high-resolution-logo-transparent.png")}
+        source={require("../assets/tick-8-high-resolution-logo-transparent.png")}
       />
       <Text style={styles.tagline}>Login</Text>
       <View style={styles.inputContainer}>

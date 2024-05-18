@@ -33,6 +33,7 @@ import { PaperProvider } from "react-native-paper";
 import Search from "./screens/Search";
 import WalletScreen from "./screens/WalletScreen";
 import QRScannerScreen from "./screens/QRScannerScreen";
+import CategorySelectionScreen from "./screens/CategorySelectionScreen";
 
 const Stack = createNativeStackNavigator();
 const STRIPE_KEY =
@@ -267,6 +268,10 @@ const StackNavigator = () => {
                 name="FeaturedScreen"
                 component={FeaturedTabScreen}
               />
+              <Stack.Screen
+                name="CategorySelectionScreen"
+                component={CategorySelectionScreen}
+              />
               <Stack.Screen name="Cart" component={CartPage} />
               <Stack.Screen name="Checkout" component={CheckoutScreen} />
               <Stack.Screen name="EventDetail" component={EventDetail} />
@@ -302,7 +307,7 @@ const StackNavigator = () => {
 };
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(false);
+  const [user, setUser] = useState(null);
   async function getData() {
     const data = await AsyncStorage.getItem("isLoggedIn");
     const userData = await AsyncStorage.getItem("userData");
@@ -314,11 +319,13 @@ function App() {
     getData();
   }, [isLoggedIn]);
   return (
-    <NavigationContainer>
-      <StatusBar barStyle="light-content"></StatusBar>
-      {isLoggedIn ? <DrawerNavigator /> : <LoginNavigator />}
-      <Toast config={toastConfig} />
-    </NavigationContainer>
+    <View style={{ flex: 1, backgroundColor: "#000000" }}>
+      <NavigationContainer>
+        <StatusBar barStyle="light-content" backgroundColor="#000000" />
+        {isLoggedIn ? <DrawerNavigator /> : <LoginNavigator />}
+        <Toast config={toastConfig} />
+      </NavigationContainer>
+    </View>
   );
 }
 

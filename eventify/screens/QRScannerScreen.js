@@ -1,24 +1,20 @@
-import React, { useState, useEffect } from "react";
-import { Text, View, StyleSheet, Button } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import { Text, View, StyleSheet, Image, ActivityIndicator } from "react-native";
 import { CameraView, Camera } from "expo-camera/next";
-import QRCode from "react-native-qrcode-svg";
 import CustomButton from "./forms/CustomButton";
 import ordersApi from "../api/orders";
 import usersApi from "../api/users";
-import eventsApi from "../api/events";
 import { useFocusEffect } from "@react-navigation/native";
 
 export default function QRScanner() {
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
   const [data, setData] = useState(null);
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState({});
+  const [attendee, setAttendee] = useState({});
+  const [organizer, setOrganizer] = useState({});
   const [loading, setLoading] = useState(false);
-  const [eventsData, setEventsData] = useState([]);
-  const [eventAndTicketIds, setEventAndTicketIds] = useState([]);
-  const [attendee, setAttendee] = useState([]);
-  const [organizer, setOrganizer] = useState([]);
-  const [ticketData, setTicketData] = useState([]);
+  const [cardLoading, setCardLoading] = useState(false);
 
   useEffect(() => {
     const getCameraPermissions = async () => {
@@ -32,78 +28,47 @@ export default function QRScanner() {
   const handleBarCodeScanned = async ({ type, data }) => {
     setScanned(true);
     setData(data);
+    setCardLoading(true);
 
-    // Fetch order info using the qrIdentifier
     try {
       const orderData = (await ordersApi.getOrderbyQRIdentifier(data)).data;
       setOrders(orderData);
-      console.log(orderData);
+      await fetchUser(orderData.user);
+      await fetchOwner(orderData.tickets[0]?.owner);
     } catch (error) {
       console.error("Error fetching order info:", error);
-    }
-  };
-
-  const fetchUserTickets = async () => {
-    setLoading(true);
-    try {
-      const eventAndTicketIdsTemp = orders.reduce((acc, order) => {
-        order.tickets.forEach((ticket) => {
-          acc.push({
-            eventId: ticket.event,
-            ticketId: ticket.ticketId,
-          });
-        });
-        return acc;
-      }, []);
-
-      eventsData.map((event) => {
-        const ticketId = eventAndTicketIds.find(
-          (item) => item.eventId === event._id
-        )?.ticketId;
-        const ticket = event.tickets.find((ticket) => ticket._id === ticketId);
-        setTicketData(ticket);
-      });
-
-      setEventAndTicketIds(eventAndTicketIdsTemp);
-
-      const promises = eventAndTicketIdsTemp.map(async ({ eventId }) => {
-        return (await eventsApi.getEventById(eventId)).data;
-      });
-
-      const eventData = await Promise.all(promises);
-      setEventsData(eventData);
-    } catch (error) {
-      console.error("Error fetching user orders:", error);
     } finally {
-      setLoading(false);
+      setCardLoading(false);
     }
   };
 
-  const fetchUser = async () => {
-    const userId = orderData.user;
+  const fetchUser = async (userId) => {
     try {
       const user = (await usersApi.getUserById(userId)).data;
-      setAttendee(user);
+
+      setAttendee(user.data);
     } catch (error) {
       console.error("Error fetching user:", error);
     }
   };
 
-  const fetchOwner = async () => {
-    const ownerId = orderData.owner;
+  const fetchOwner = async (ownerId) => {
     try {
       const owner = (await usersApi.getUserById(ownerId)).data;
-      setOrganizer(owner);
+      setOrganizer(owner.data);
     } catch (error) {
       console.error("Error fetching owner:", error);
     }
   };
 
   useFocusEffect(
-    React.useCallback(() => {
-      fetchUserTickets();
-      fetchUser();
-      fetchOwner();
+    useCallback(() => {
+      setLoading(true);
+      if (orders && orders._id) {
+        fetchUser(orders.user);
+        fetchOwner(orders.tickets[0]?.owner);
+      }
+      setLoading(false);
     }, [orders])
   );
 
@@ -118,7 +83,17 @@ export default function QRScanner() {
     <View style={styles.container}>
       {scanned ? (
         <View>
-          <QRCode value={data} size={200} />
+          {cardLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#fff" />
+            </View>
+          ) : (
+            <OrderCard
+              orders={orders}
+              attendee={attendee}
+              organizer={organizer}
+            />
+          )}
           <CustomButton
             title={"Tap to Scan Again"}
             onPress={() => setScanned(false)}
@@ -136,6 +111,52 @@ export default function QRScanner() {
     </View>
   );
 }
+const OrderCard = ({ orders, attendee, organizer }) => {
+  return (
+    <View style={styles.card}>
+      <Text>Order ID: {orders._id}</Text>
+      <Text>Order Date: {new Date(orders.orderDate).toLocaleDateString()}</Text>
+      <Text>Payment Amount: ${orders?.payment?.amount}</Text>
+      <View style={{ marginVertical: 5 }}>
+        <Text>Ticket(s):</Text>
+      </View>
+      {orders.tickets?.map((ticket) => (
+        <View key={ticket._id} style={styles.ticketCard}>
+          <Text>Event Name: {ticket.eventName}</Text>
+          <Text>Event Category: {ticket.eventCategory}</Text>
+          <Text>Ticket Name: {ticket.ticketName}</Text>
+          <Text>Ticket Price: ${ticket.ticketPrice}</Text>
+        </View>
+      ))}
+
+      {attendee && (
+        <View style={styles.attendeeCard}>
+          <Text>Attendee Name: {attendee.name}</Text>
+          {attendee.sex && <Text>Attendee Sex: {attendee.sex}</Text>}
+          {attendee.profession && (
+            <Text>Attendee Profession: {attendee.profession}</Text>
+          )}
+          {attendee.phoneNumber && (
+            <Text>Attendee Phone Number: {attendee.phoneNumber}</Text>
+          )}
+          {attendee.avatar && (
+            <Image source={{ uri: attendee.avatar }} style={styles.avatar} />
+          )}
+        </View>
+      )}
+
+      {/* 
+      {organizer && (
+        <View style={styles.organizerCard}>
+          <Text>
+            Owner Name: {organizer.businessName ? organizer.businessName : organizer.name}
+          </Text>
+        </View>
+      )} 
+      */}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -144,5 +165,40 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#000",
+  },
+  card: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  loadingContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  ticketCard: {
+    marginBottom: 15,
+    padding: 10,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 5,
+  },
+  attendeeCard: {
+    marginTop: 20,
+  },
+  organizerCard: {
+    marginTop: 20,
   },
 });

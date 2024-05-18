@@ -237,7 +237,7 @@ const OrganizerRegistration = ({ navigation }) => {
         <View style={styles.container}>
           <Image
             style={styles.logo}
-            source={require("../assets/eventify-high-resolution-logo-transparent.png")}
+            source={require("../assets/tick-8-high-resolution-logo-transparent.png")}
           />
           <Text style={styles.heading}>Create Your Business Account</Text>
 

@@ -32,6 +32,27 @@ const uploadAvatar = catchAsyncErrors(async (req, res) => {
   }
 });
 
+const updateUserInterests = catchAsyncErrors(async (req, res) => {
+  const { userId } = req.params;
+  const { interests } = req.body;
+
+  try {
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { selectedInterests: interests },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).send({ error: "User not found" });
+    }
+
+    res.status(200).send(user);
+  } catch (error) {
+    res.status(500).send({ error: "Failed to update interests" });
+  }
+});
+
 // Get the user count
 const getUserCount = catchAsyncErrors(async (req, res) => {
   const userCount = await User.countDocuments();
@@ -319,4 +340,5 @@ module.exports = {
   verifyOtpAndResetPassword,
   resendSecurityCode,
   deleteUserByEmail,
+  updateUserInterests,
 };

@@ -21,6 +21,9 @@ router.get("/qr/:qrIdentifier", orderController.getOrderbyQRIdentifier);
 // Update an order by ID
 router.put("/:id", orderController.updateOrderById);
 
+// Route to fetch user names by their IDs
+router.post("/getUsersByIds", orderController.getUsersByIds);
+
 // Delete an order by ID
 router.delete("/:id", orderController.deleteOrderById);
 

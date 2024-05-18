@@ -50,6 +50,10 @@ const userSchema = new mongoose.Schema({
   securityCodeExpires: Date,
   sex: String,
   profession: String,
+  selectedInterests: {
+    type: [String],
+    default: [],
+  },
 });
 
 //  Hash password

@@ -256,7 +256,11 @@ function UpdateProfile() {
         </View>
         <View style={styles.button}>
           {loading ? (
-            <ActivityIndicator size="large" color="#0000ff" />
+            <TouchableOpacity onPress={{}} style={styles.inBut}>
+              <View>
+                <Text style={styles.textSign}>Uploading</Text>
+              </View>
+            </TouchableOpacity>
           ) : (
             <TouchableOpacity
               onPress={() => updateProfile()}

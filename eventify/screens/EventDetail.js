@@ -1,6 +1,6 @@
 /**
- * React Native Event Booking App UI - Event Detail Screnn
- * -> The screen can be seperated 4 sections and 1 fixed bottom bar
+ * React Native Event Booking App UI - Event Detail Screen
+ * -> The screen can be separated into 4 sections and 1 fixed bottom bar
  *
  * TODO:
  * [X] Build the header image background section
@@ -21,6 +21,7 @@ import {
   ImageBackground,
   Platform,
   TouchableOpacity,
+  Share,
 } from "react-native";
 import styled from "styled-components/native";
 import moment from "moment";
@@ -30,6 +31,8 @@ import { McAvatar, McIcon, McText } from "../components";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCart } from "../components/context/CartContext";
+import ordersApi from "../api/orders";
+import usersApi from "../api/users";
 
 const EventDetail = ({ navigation, route }) => {
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -37,25 +40,104 @@ const EventDetail = ({ navigation, route }) => {
   const [user, setUser] = useState(false);
   const { addToCart, cart } = useCart();
   const [locationName, setLocationName] = useState("");
+  const [orders, setOrders] = useState([]);
+  const [selectedButton, setSelectedButton] = useState("about");
+  // const [participants, setParticipants] = useState([]); // Participant section commented out
 
   const getData = async () => {
     const userData = await AsyncStorage.getItem("userData");
-
     setUser(JSON.parse(userData));
   };
+
+  const fetchOrders = async () => {
+    try {
+      const ordersData = await ordersApi.getOrders();
+      setOrders(ordersData.data);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    }
+  };
+
+  // const fetchParticipants = async () => { // Participant section commented out
+  //   try {
+  //     // Extract user IDs from orders
+  //     const userIds = orders.flatMap((order) => order.user);
+  //     console.log(userIds);
+  //     // Call the getUsersById API endpoint with the extracted user IDs
+  //     const participantsData = await ordersApi.getUsersById(userIds);
+  //     console.log(participantsData, "participantData");
+  //     setParticipants(participantsData.data);
+  //     console.log(participants, "participants");
+  //   } catch (error) {
+  //     console.error("Error fetching participants:", error);
+  //   }
+  // };
+
+  const handleShare = async () => {
+    try {
+      const result = await Share.share({
+        message: `Check out this event: ${
+          selectedEvent.name
+        } happening on ${moment(selectedEvent.startingTime).format(
+          "MMMM Do YYYY, h:mm a"
+        )}.`,
+        url: selectedEvent.imageUrl, // Add the URL of the event image here
+        title: selectedEvent.name,
+      });
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          console.log("shared with activity type of: ", result.activityType);
+        } else {
+          console.log("shared");
+        }
+      } else if (result.action === Share.dismissedAction) {
+        console.log("dismissed");
+      }
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
   useEffect(() => {
     getData();
+    fetchOrders();
+    // fetchParticipants(); // Participant section commented out
   }, []);
 
   useEffect(() => {
-    let { selectedEvent } = route.params;
+    const { selectedEvent } = route.params;
     setSelectedEvent(selectedEvent);
-    // Call function to fetch location name when selectedEvent changes
-    fetchLocationName(
-      selectedEvent?.location.coordinates[0],
-      selectedEvent?.location.coordinates[1]
-    );
+
+    if (selectedEvent) {
+      fetchLocationName(
+        selectedEvent.location.coordinates[0],
+        selectedEvent.location.coordinates[1]
+      );
+
+      saveViewedEvent(selectedEvent);
+    }
   }, [route.params]);
+
+  const saveViewedEvent = async (event) => {
+    try {
+      let viewedEvents = await AsyncStorage.getItem("viewedEvents");
+      viewedEvents = viewedEvents ? JSON.parse(viewedEvents) : [];
+
+      viewedEvents = [
+        event,
+        ...viewedEvents.filter((e) => e._id !== event._id),
+      ];
+
+      if (viewedEvents.length > 10) {
+        viewedEvents = viewedEvents.slice(0, 10);
+      }
+
+      await AsyncStorage.setItem("viewedEvents", JSON.stringify(viewedEvents));
+    } catch (error) {
+      console.error("Error saving viewed event:", error);
+    }
+  };
 
   // Function to fetch location name using reverse geocoding
   const fetchLocationName = async (latitude, longitude) => {
@@ -64,13 +146,17 @@ const EventDetail = ({ navigation, route }) => {
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyDS-r_uCCqf3x4ATCTNhF2GGIy9GOwqfwI`
       );
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
       const data = await response.json();
       const firstResult = data.results[0];
-      if (firstResult) {
-        setLocationName(firstResult.formatted_address); // Set location name
-      } else {
-        setLocationName("Location not found");
-      }
+
+      setLocationName(
+        firstResult ? firstResult.formatted_address : "Location not found"
+      );
     } catch (error) {
       console.error("Error fetching location name:", error);
       setLocationName("Location not found");
@@ -109,7 +195,7 @@ const EventDetail = ({ navigation, route }) => {
         contentContainerStyle={{ flexGrow: 1, backgroundColor: COLORS.black }}
         style={{ backgroundColor: COLORS.black }}
       >
-        {/*ImageBackground*/}
+        {/* ImageBackground */}
         <ImageBackground
           resizeMode="cover"
           source={
@@ -122,7 +208,7 @@ const EventDetail = ({ navigation, route }) => {
           }}
         >
           <View style={{ flex: 1 }}>
-            {/*Image Header*/}
+            {/* Image Header */}
             <ImageHeaderSection>
               <TouchableOpacity
                 style={{
@@ -142,29 +228,32 @@ const EventDetail = ({ navigation, route }) => {
                   width: 96,
                   height: 40,
                   backgroundColor: "rgba(0,0,0,0.5)",
-                  justifyContent: "space-between",
+                  justifyContent: "center",
                   alignItems: "center",
                   flexDirection: "row",
                   borderRadius: 10,
                 }}
               >
-                <TouchableOpacity onPress={{}}>
-                  <McIcon
-                    source={icons.like}
-                    size={24}
-                    style={{ marginLeft: 16, tintColor: COLORS.white }}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={{}}>
+                {/* <TouchableOpacity onPress={{}}> // Heart icon removed
+              <McIcon
+                source={icons.like}
+                size={24}
+                style={{ marginLeft: 16, tintColor: COLORS.white }}
+              />
+            </TouchableOpacity> */}
+                <TouchableOpacity onPress={handleShare}>
                   <McIcon
                     source={icons.share}
-                    size={24}
-                    style={{ marginRight: 16, tintColor: COLORS.white }}
+                    size={28}
+                    style={{
+                      //marginLeft: 16,
+                      tintColor: COLORS.white,
+                    }}
                   />
                 </TouchableOpacity>
               </View>
             </ImageHeaderSection>
-            {/*Image Footer*/}
+            {/* Image Footer */}
             <ImageFooterSection>
               <LinearGradient
                 colors={["transparent", "#000"]}
@@ -186,7 +275,7 @@ const EventDetail = ({ navigation, route }) => {
                       STARTING{" "}
                       {moment(
                         selectedEvent?.startingTime,
-                        "YYYY/MM/DD hh:mm A"
+                        "YYYY/MM/DD hh:mm                         A"
                       ).format("hh:mm A")}
                     </McText>
                   </View>
@@ -219,43 +308,69 @@ const EventDetail = ({ navigation, route }) => {
             </ImageFooterSection>
           </View>
         </ImageBackground>
-        {/*buttons group section*/}
+        {/* buttons group section */}
         <ButtonsGroupSection>
           <TouchableOpacity
             style={{
               width: 76,
               height: 32,
               justifyContent: "center",
-              backgroundColor: COLORS.white,
+              backgroundColor:
+                selectedButton === "about" ? COLORS.white : COLORS.gray,
               marginRight: 16,
               alignItems: "center",
               borderRadius: 10,
             }}
+            onPress={() => setSelectedButton("about")}
           >
-            <McText h6 style={{ color: COLORS.black, letterSpacing: 1 }}>
+            <McText
+              h6
+              style={{
+                color: selectedButton === "about" ? COLORS.black : COLORS.white,
+                letterSpacing: 1,
+              }}
+            >
               ABOUT
             </McText>
           </TouchableOpacity>
-          <TouchableOpacity
+          {/*<TouchableOpacity
             style={{
               width: 124,
               height: 32,
               justifyContent: "center",
-              backgroundColor: COLORS.input,
+              backgroundColor:
+                selectedButton === "participants" ? COLORS.white : COLORS.gray,
               alignItems: "center",
               borderRadius: 10,
             }}
+            onPress={() => setSelectedButton("participants")}
           >
-            <McText h6 style={{ opacity: 0.5, letterSpacing: 1 }}>
+            <McText
+              h6
+              style={{
+                color:
+                  selectedButton === "participants"
+                    ? COLORS.black
+                    : COLORS.white,
+                letterSpacing: 1,
+              }}
+            >
               PARTICIPANTS
             </McText>
-          </TouchableOpacity>
+            </TouchableOpacity>*/}
         </ButtonsGroupSection>
-        {/*DescriptionSection*/}
-        <DescriptionSection>
-          <McText body3>{selectedEvent?.description}</McText>
-        </DescriptionSection>
-        {/*LocationSection*/}
+        {/* Render description or participants section based on the selected button */}
+        {
+          selectedButton === "about" ? (
+            <DescriptionSection>
+              <McText body3>{selectedEvent?.description}</McText>
+            </DescriptionSection>
+          ) : // <ParticipantsSection> // Participant section commented out
+          //   {/* Render participants here */}
+          // </ParticipantsSection> // Participant section commented out
+          null // Participant section commented out
+        }
+        {/* LocationSection */}
         <LocationSection>
           <McText h3>LOCATION</McText>
           <View
@@ -287,7 +402,7 @@ const EventDetail = ({ navigation, route }) => {
           <View style={{ paddingBottom: 150 }}></View>
         </LocationSection>
       </ScrollView>
-      {/*Fixed BottomBar*/}
+      {/* Fixed BottomBar */}
       <BottomBarSection>
         <View
           style={{
@@ -442,6 +557,11 @@ const DescriptionSection = styled.View`
 
 const LocationSection = styled.View`
   margin: 25px 30px;
+`;
+
+const ParticipantsSection = styled.View`
+  margin: 25px 30px;
+  /* Add styles for participants section */
 `;
 
 const BottomBarSection = styled.View`
