@@ -1,11 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  View,
-  StyleSheet,
-  Text,
-  DevSettings,
-  ActivityIndicator,
-} from "react-native";
+import { View, StyleSheet, Text, ActivityIndicator } from "react-native";
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
 import { Avatar, Title } from "react-native-paper";
 import { TouchableOpacity } from "react-native-gesture-handler";
@@ -19,17 +13,11 @@ const DrawerList = [
     label: "QR Scanner",
     navigateTo: "QRScanner",
   },
-  /* {
-    icon: "wallet-outline",
-    label: "Wallet",
-    navigateTo: "Wallet",
-  },
-*/
   { icon: "ticket-outline", label: "My Tickets", navigateTo: "Tickets" },
   { icon: "share-outline", label: "Invite Friends", onPress: () => {} },
   { icon: "help-circle-outline", label: "Help & Support", onPress: () => {} },
-  //{ icon: "settings-outline", label: "Settings", onPress: () => {} },
 ];
+
 const DrawerLayout = ({ icon, label, navigateTo }) => {
   const navigation = useNavigation();
 
@@ -51,7 +39,7 @@ const DrawerItems = (props) => {
     if (item.label === "QR Scanner") {
       return userRole === "organizer" || userRole === "admin";
     }
-    return true; // show all other items by default
+    return true;
   }).map((item, i) => {
     return (
       <DrawerLayout
@@ -63,13 +51,14 @@ const DrawerItems = (props) => {
     );
   });
 };
+
 function DrawerContent(props) {
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(false);
+
   const getData = async () => {
     const userData = await AsyncStorage.getItem("userData");
-
     setUser(JSON.parse(userData));
   };
 
@@ -81,12 +70,24 @@ function DrawerContent(props) {
     }, [])
   );
 
-  function signOut() {
-    AsyncStorage.setItem("isLoggedIn", "");
-    AsyncStorage.setItem("userData", "");
-
-    navigation.navigate("LoginUser");
+  async function signOut() {
+    setLoading(true);
+    try {
+      await AsyncStorage.multiSet([
+        ["isLoggedIn", ""],
+        ["userData", ""],
+      ]);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "LoginUser" }],
+      });
+    } catch (error) {
+      console.error("Error clearing AsyncStorage", error);
+    } finally {
+      setLoading(false);
+    }
   }
+
   return (
     <View style={{ flex: 1 }}>
       <DrawerContentScrollView {...props}>
@@ -125,17 +126,22 @@ function DrawerContent(props) {
         </View>
       </DrawerContentScrollView>
       <View style={styles.bottomDrawerSection}>
-        <DrawerItem
-          onPress={() => signOut()}
-          icon={({ color, size }) => (
-            <Icon name="exit-outline" color={color} size={size} />
-          )}
-          label="Sign Out"
-        />
+        {loading ? (
+          <ActivityIndicator size="large" color="red" />
+        ) : (
+          <DrawerItem
+            onPress={() => signOut()}
+            icon={({ color, size }) => (
+              <Icon name="exit-outline" color={color} size={size} />
+            )}
+            label="Sign Out"
+          />
+        )}
       </View>
     </View>
   );
 }
+
 export default DrawerContent;
 
 const styles = StyleSheet.create({
@@ -153,7 +159,6 @@ const styles = StyleSheet.create({
   caption: {
     fontSize: 12,
     lineHeight: 14,
-    // color: '#6e6e6e',
     width: "100%",
   },
   row: {
@@ -164,7 +169,6 @@ const styles = StyleSheet.create({
   section: {
     flexDirection: "row",
     alignItems: "center",
-    // marginRight: 15,
   },
   paragraph: {
     fontWeight: "bold",
