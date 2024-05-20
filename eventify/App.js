@@ -13,7 +13,6 @@ import AccountScreen from "./screens/Account";
 import { McIcon, McText } from "./components";
 import RegisterScreen from "./screens/RegisterScreen";
 import LoginScreen from "./screens/LoginScreen";
-import { AuthProvider, useAuth } from "./auth/context";
 import ForgotPassword from "./screens/ForgotPassword";
 import OtpVerification from "./auth/otpVerification";
 import { CartProvider } from "./components/context/CartContext";
@@ -34,6 +33,7 @@ import Search from "./screens/Search";
 import WalletScreen from "./screens/WalletScreen";
 import QRScannerScreen from "./screens/QRScannerScreen";
 import CategorySelectionScreen from "./screens/CategorySelectionScreen";
+import ContactUs from "./screens/ContactUs";
 
 const Stack = createNativeStackNavigator();
 const STRIPE_KEY =
@@ -170,6 +170,7 @@ const DrawerNavigator = () => {
         <Drawer.Screen name="Wallet" component={WalletScreen} />
         <Drawer.Screen name="Add-EventTypes" component={AddEventTypes} />
         <Drawer.Screen name="Add-Category" component={AddEventCategory} />
+        <Drawer.Screen name="ContactUs" component={ContactUs} />
       </Drawer.Navigator>
     </CartProvider>
   );

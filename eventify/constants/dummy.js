@@ -1,4 +1,4 @@
-import { SIZES } from "./theme";
+import SIZES from "./theme";
 
 export const Events = [
   {

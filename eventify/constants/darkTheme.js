@@ -1,4 +1,3 @@
-//theme.js
 import { Dimensions } from "react-native";
 const { width, height } = Dimensions.get("window");
 
@@ -7,8 +6,8 @@ const CUSTOMFONT_BOLD = "ProductSans-Bold";
 const CUSTOMFONT_BLACK = "ProductSans-Black";
 
 export const COLORS = {
-  default: "#FFFFFF",
-  primary: "#FFFFFF",
+  default: "#000000",
+  primary: "#121212",
   white: "#FFFFFF",
   black: "#000000",
   tabBar: "#121212",
@@ -99,6 +98,6 @@ export const FONTS = {
   },
 };
 
-const appTheme = { COLORS, SIZES, FONTS };
+const darkTheme = { COLORS, SIZES, FONTS };
 
-export default appTheme;
+export default darkTheme;

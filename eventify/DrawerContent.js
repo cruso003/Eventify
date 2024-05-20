@@ -15,7 +15,7 @@ const DrawerList = [
   },
   { icon: "ticket-outline", label: "My Tickets", navigateTo: "Tickets" },
   { icon: "share-outline", label: "Invite Friends", onPress: () => {} },
-  { icon: "help-circle-outline", label: "Help & Support", onPress: () => {} },
+  { icon: "help-circle-outline", label: "Contact Us", navigateTo: "ContactUs" },
 ];
 
 const DrawerLayout = ({ icon, label, navigateTo }) => {

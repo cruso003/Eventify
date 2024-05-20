@@ -1,4 +1,3 @@
-//theme.js
 import { Dimensions } from "react-native";
 const { width, height } = Dimensions.get("window");
 
@@ -11,8 +10,8 @@ export const COLORS = {
   primary: "#FFFFFF",
   white: "#FFFFFF",
   black: "#000000",
-  tabBar: "#121212",
-  input: "#1D1D1D",
+  tabBar: "#F8F8F8",
+  input: "#E0E0E0",
   blue: "#4096FE",
   gray: "#878787",
   gray1: "#666666",
@@ -99,6 +98,6 @@ export const FONTS = {
   },
 };
 
-const appTheme = { COLORS, SIZES, FONTS };
+const lightTheme = { COLORS, SIZES, FONTS };
 
-export default appTheme;
+export default lightTheme;

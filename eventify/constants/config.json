@@ -1,0 +1,14 @@
+{
+  "theme": {
+    "COLORS": {
+      "primary": "#FFFFFF",
+      "tabBar": "#121212",
+      "blue": "#4096FE"
+    },
+    "FONTS": {
+      "CUSTOMFONT_REGULAR": "ProductSans-Regular",
+      "CUSTOMFONT_BOLD": "ProductSans-Bold",
+      "CUSTOMFONT_BLACK": "ProductSans-Black"
+    }
+  }
+}
