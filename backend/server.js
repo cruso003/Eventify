@@ -31,6 +31,7 @@ const organizerRoutes = require("./routes/organizerRoutes");
 const eventTypeRoutes = require("./routes/eventTypeRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const admin = require("./routes/admin");
+const contactRoutes = require("./routes/contactRoutes");
 
 //import Middlewares
 const helmet = require("helmet");
@@ -108,6 +109,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/payments", paymentRoute);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/eventTypes", eventTypeRoutes);
+app.use("/api/contact", contactRoutes);
 
 //Admin app
 app.use("/api/v2/admin", admin);
