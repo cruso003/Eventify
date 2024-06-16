@@ -22,8 +22,6 @@ const OrganizerRegistration = ({ navigation }) => {
   const [businessName, setBusinessName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
   const [visible, setVisible] = useState(false);
   const [selectedState, setSelectedState] = useState("Montserrado");
   const [selectedCity, setSelectedCity] = useState("Please choose a city");

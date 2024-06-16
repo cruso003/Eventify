@@ -32,12 +32,14 @@ const LoginScreen = () => {
       };
 
       const response = await userApi.loginUser(credentials);
+      console.log(response, "response");
+      console.log(response.data, "login response.data");
 
-      if (response.data.success) {
+      if (response.data && response.data.success) {
         // Handle successful login
         const data = response.data.user;
-        AsyncStorage.setItem("userData", JSON.stringify(data));
-        AsyncStorage.setItem("isLoggedIn", JSON.stringify(true));
+        await AsyncStorage.setItem("userData", JSON.stringify(data));
+        await AsyncStorage.setItem("isLoggedIn", JSON.stringify(true));
 
         // Check if user has selected their interests
         const hasSelectedInterests =

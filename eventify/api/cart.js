@@ -8,7 +8,7 @@ const addToCart = (data) => client.post(endpoint, data);
 const deleteCartItem = (id) => client.delete(`${endpoint}/${id}`);
 const removeCartItems = async (userId, itemIds) => {
   try {
-    const url = `http://192.168.8.198:9000/api/cart/user/${userId}/deleteMultiple`;
+    const url = `http://54.158.28.163:8080//api/cart/user/${userId}/deleteMultiple`;
 
     // Make the DELETE request and return the response
     const response = await axios.delete(url, {

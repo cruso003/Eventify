@@ -8,13 +8,10 @@ import {
   SafeAreaView,
   Alert,
 } from "react-native";
-import { FontAwesome } from "@expo/vector-icons"; // Import FontAwesome icons
+import { FontAwesome } from "@expo/vector-icons";
 import colors from "../config/colors";
 import userApi from "../api/users";
-import FlashMessage, {
-  showMessage,
-  hideMessage,
-} from "react-native-flash-message";
+import FlashMessage, { showMessage } from "react-native-flash-message";
 
 const RegisterScreen = ({ navigation }) => {
   const [fullname, setFullname] = useState("");

@@ -8,8 +8,7 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
-import { Text, TouchableRipple, Avatar } from "react-native-paper";
-import Icon from "react-native-vector-icons/Ionicons";
+import { Text, Avatar } from "react-native-paper";
 import Icon5 from "react-native-vector-icons/FontAwesome5";
 import { images } from "../constants";
 import Email from "react-native-vector-icons/MaterialCommunityIcons";

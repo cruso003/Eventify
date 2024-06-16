@@ -1,6 +1,11 @@
 {
   "expo": {
-    "name": "ticketplus",
+    "scheme": "myapp",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "name": "Ticket Plus",
     "slug": "ticketplus",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -40,6 +45,14 @@
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
           "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
         }
       ]
     ],

@@ -9,10 +9,7 @@ import {
   ActivityIndicator,
   TextInput,
   KeyboardAvoidingView,
-  Animated,
   Platform,
-  StatusBar,
-  Alert,
   Modal,
   Button,
 } from "react-native";

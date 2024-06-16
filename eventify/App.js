@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import * as Font from "expo-font";
 import { View, ActivityIndicator, StatusBar } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
+import { Link, NavigationContainer } from "@react-navigation/native";
 import { EventDetail } from "./screens";
 import { COLORS, customFonts, icons } from "./constants";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -34,6 +34,7 @@ import WalletScreen from "./screens/WalletScreen";
 import QRScannerScreen from "./screens/QRScannerScreen";
 import CategorySelectionScreen from "./screens/CategorySelectionScreen";
 import ContactUs from "./screens/ContactUs";
+import * as Linking from "expo-linking";
 
 const Stack = createNativeStackNavigator();
 const STRIPE_KEY =
@@ -146,6 +147,10 @@ const LoginNavigator = () => {
       <Stack.Screen
         name="registerOrganizer"
         component={OrganizerRegistration}
+      />
+      <Stack.Screen
+        name="CategorySelectionScreen"
+        component={CategorySelectionScreen}
       />
       <Stack.Screen name="FeaturedScreen" component={DrawerNavigator} />
     </Stack.Navigator>
@@ -306,9 +311,21 @@ const StackNavigator = () => {
     <ActivityIndicator size="small"></ActivityIndicator>
   );
 };
+
+const prefix = Linking.createURL("/");
+const linking = {
+  prefixes: [prefix, "myapp://"],
+  config: {
+    screens: {
+      EventDetail: "eventDetail/:id",
+      // other screens...
+    },
+  },
+};
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+
   async function getData() {
     const data = await AsyncStorage.getItem("isLoggedIn");
     const userData = await AsyncStorage.getItem("userData");
@@ -316,12 +333,13 @@ function App() {
     setIsLoggedIn(data);
     setUser(userData);
   }
+
   useEffect(() => {
     getData();
   }, [isLoggedIn]);
   return (
     <View style={{ flex: 1, backgroundColor: "#000000" }}>
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         <StatusBar barStyle="light-content" backgroundColor="#000000" />
         {isLoggedIn ? <DrawerNavigator /> : <LoginNavigator />}
         <Toast config={toastConfig} />

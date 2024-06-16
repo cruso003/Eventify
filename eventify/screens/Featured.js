@@ -296,7 +296,7 @@ const FeaturedScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={{ marginBottom: 120 }}>
+      <ScrollView style={{ marginBottom: 100 }}>
         <SectionHeader>
           <View>
             <McText body5 style={{ opacity: 0.5 }}>
@@ -411,7 +411,7 @@ const FeaturedScreen = ({ navigation }) => {
             renderItem={_renderRecentlyViewedItem}
           />
         </View>
-        <LinearGradient
+        {/*<LinearGradient
           colors={COLORS.linear}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -442,7 +442,7 @@ const FeaturedScreen = ({ navigation }) => {
               </McText>
             </View>
           </View>
-        </LinearGradient>
+          </LinearGradient>*/}
       </ScrollView>
     </SafeAreaView>
   );

@@ -95,6 +95,20 @@ const ContactUs = () => {
         <TouchableOpacity style={styles.button} onPress={handleSubmit}>
           <Text style={styles.buttonText}>Send</Text>
         </TouchableOpacity>
+        <Text style={styles.contactInfo}>
+          For account deletion requests, please enter your request in the
+          message and we will get back to you for confirmation.
+        </Text>
+        <Text style={styles.contactInfo}>
+          Alternatively, you can also email us at{" "}
+          <Text
+            style={{ color: "blue", textDecorationLine: "underline" }}
+            onPress={() => Linking.openURL("mailto:support@example.com")}
+          >
+            support@example.com
+          </Text>
+          .
+        </Text>
         <Text style={styles.contactInfo}>Follow us on</Text>
         <View style={styles.socialIcons}>
           <TouchableOpacity
@@ -192,7 +206,7 @@ const styles = StyleSheet.create({
   },
   contactInfo: {
     fontSize: 16,
-    marginVertical: 20,
+    marginVertical: 10,
     color: "#fff", // Changed to white
   },
   socialIcons: {

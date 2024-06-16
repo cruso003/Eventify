@@ -14,7 +14,6 @@
  */
 import React, { useEffect, useState } from "react";
 import {
-  Text,
   View,
   StyleSheet,
   ScrollView,
@@ -26,13 +25,14 @@ import {
 import styled from "styled-components/native";
 import moment from "moment";
 import { LinearGradient } from "expo-linear-gradient";
-import { dummyData, FONTS, SIZES, COLORS, icons, images } from "../constants";
-import { McAvatar, McIcon, McText } from "../components";
+import { dummyData, SIZES, COLORS, icons } from "../constants";
+import { McIcon, McText } from "../components";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCart } from "../components/context/CartContext";
 import ordersApi from "../api/orders";
-import usersApi from "../api/users";
+import events from "../api/events";
+import config from "../api/config";
 
 const EventDetail = ({ navigation, route }) => {
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -42,6 +42,8 @@ const EventDetail = ({ navigation, route }) => {
   const [locationName, setLocationName] = useState("");
   const [orders, setOrders] = useState([]);
   const [selectedButton, setSelectedButton] = useState("about");
+  const [apiKey, setApiKey] = useState("");
+  const [loading, setLoading] = useState(false);
   // const [participants, setParticipants] = useState([]); // Participant section commented out
 
   const getData = async () => {
@@ -73,15 +75,51 @@ const EventDetail = ({ navigation, route }) => {
   //   }
   // };
 
+  useEffect(() => {
+    getData();
+    fetchOrders();
+    // fetchParticipants(); // Participant section commented out
+  }, []);
+
+  useEffect(() => {
+    if (route.params?.selectedEvent) {
+      const { selectedEvent } = route.params;
+      setSelectedEvent(selectedEvent);
+
+      fetchLocationName(
+        selectedEvent?.location?.coordinates[0],
+        selectedEvent?.location?.coordinates[1]
+      );
+
+      saveViewedEvent(selectedEvent);
+    } else if (route.params?.id) {
+      fetchEventById(route.params.id);
+    }
+  }, [route.params, apiKey]);
+
+  const fetchEventById = async (id) => {
+    try {
+      const event = await events.getEventById(id);
+      setSelectedEvent(event);
+    } catch (error) {
+      console.error("Error fetching event:", error);
+    }
+  };
+
   const handleShare = async () => {
     try {
+      const imageUrl = selectedEvent?.imageUrl ? selectedEvent.imageUrl : "";
+      const appLink = `myapp://eventDetail/${selectedEvent._id}`;
+
+      const message = `Check out this event: ${
+        selectedEvent.name
+      } happening on ${moment(selectedEvent.startingTime).format(
+        "MMMM Do YYYY, h:mm a"
+      )}.\n\n${imageUrl}\n\nLearn more: ${appLink}`;
+
       const result = await Share.share({
-        message: `Check out this event: ${
-          selectedEvent.name
-        } happening on ${moment(selectedEvent.startingTime).format(
-          "MMMM Do YYYY, h:mm a"
-        )}.`,
-        url: selectedEvent.imageUrl, // Add the URL of the event image here
+        message: message,
+        url: appLink,
         title: selectedEvent.name,
       });
 
@@ -98,26 +136,6 @@ const EventDetail = ({ navigation, route }) => {
       alert(error.message);
     }
   };
-
-  useEffect(() => {
-    getData();
-    fetchOrders();
-    // fetchParticipants(); // Participant section commented out
-  }, []);
-
-  useEffect(() => {
-    const { selectedEvent } = route.params;
-    setSelectedEvent(selectedEvent);
-
-    if (selectedEvent) {
-      fetchLocationName(
-        selectedEvent.location.coordinates[0],
-        selectedEvent.location.coordinates[1]
-      );
-
-      saveViewedEvent(selectedEvent);
-    }
-  }, [route.params]);
 
   const saveViewedEvent = async (event) => {
     try {
@@ -139,12 +157,33 @@ const EventDetail = ({ navigation, route }) => {
     }
   };
 
+  useEffect(() => {
+    setLoading(true);
+    // Fetch API key
+    const fetchApiKey = async () => {
+      try {
+        const keyResponse = await config.getApiKey();
+
+        const key = keyResponse.data.apiKey;
+        setApiKey(key);
+      } catch (error) {
+        console.error("Error fetching API key:", error);
+        // Handle error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchApiKey();
+  }, []);
+
   // Function to fetch location name using reverse geocoding
   const fetchLocationName = async (latitude, longitude) => {
+    setLoading(true);
+
     try {
-      // Call reverse geocoding API here and set the locationName state
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyDS-r_uCCqf3x4ATCTNhF2GGIy9GOwqfwI`
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
       );
 
       if (!response.ok) {
@@ -154,12 +193,15 @@ const EventDetail = ({ navigation, route }) => {
       const data = await response.json();
       const firstResult = data.results[0];
 
+      // Update locationName state directly
       setLocationName(
         firstResult ? firstResult.formatted_address : "Location not found"
       );
     } catch (error) {
       console.error("Error fetching location name:", error);
-      setLocationName("Location not found");
+      setLocationName("Error fetching location name");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -382,8 +424,8 @@ const EventDetail = ({ navigation, route }) => {
               provider={PROVIDER_GOOGLE}
               style={{ height: 250, marginTop: 20 }}
               region={{
-                latitude: selectedEvent?.location.coordinates[0],
-                longitude: selectedEvent?.location.coordinates[1],
+                latitude: selectedEvent?.location?.coordinates[0],
+                longitude: selectedEvent?.location?.coordinates[1],
                 latitudeDelta: 0.005,
                 longitudeDelta: 0.005 * (SIZES.width / SIZES.height),
               }}
@@ -391,8 +433,8 @@ const EventDetail = ({ navigation, route }) => {
             >
               <Marker
                 coordinate={{
-                  latitude: selectedEvent?.location.coordinates[0],
-                  longitude: selectedEvent?.location.coordinates[1],
+                  latitude: selectedEvent?.location?.coordinates[0],
+                  longitude: selectedEvent?.location?.coordinates[1],
                 }}
                 title={selectedEvent?.name + " - " + selectedEvent?.category}
                 description={locationName}
@@ -421,7 +463,7 @@ const EventDetail = ({ navigation, route }) => {
               alignItems: "center",
             }}
           >
-            {selectedEvent?.tickets.map((ticket, index) => (
+            {selectedEvent?.tickets?.map((ticket, index) => (
               <TouchableOpacity
                 key={index}
                 style={{

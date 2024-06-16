@@ -4,7 +4,7 @@ import authStorage from "../auth/storage";
 
 const apiClient = create({
   // dev baseURL: "http://192.168.8.198:9000/api",
-  baseURL: "http://54.163.40.117:8080/api",
+  baseURL: "http://54.158.28.163:8080/api",
 });
 
 apiClient.addAsyncRequestTransform(async (request) => {

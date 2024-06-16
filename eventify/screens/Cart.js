@@ -13,9 +13,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  StatusBar,
   StyleSheet,
-  Platform,
   ActivityIndicator,
 } from "react-native";
 import { useCart } from "../components/context/CartContext";
