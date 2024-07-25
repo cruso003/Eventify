@@ -99,9 +99,9 @@ const ProfileScreen = () => {
             height={60}
             resizeMode="contain"
             style={{
-              marginTop: -200,
+              marginTop: -500,
             }}
-            source={require("../assets/wave.png")}
+            source={require("../assets/wavy.png")}
           />
         </View>
         <View style={{ alignItems: "center" }}>

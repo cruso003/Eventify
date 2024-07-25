@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  Button,
   SafeAreaView,
   Platform,
   StatusBar,
@@ -12,8 +11,8 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
+  Image,
 } from "react-native";
-import { useAuth } from "../auth/context";
 import {
   Ionicons,
   MaterialCommunityIcons,
@@ -31,9 +30,9 @@ const WalletScreen = () => {
   const [transactions, setTransactions] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [amountToAdd, setAmountToAdd] = useState("");
-  const { cart, addToCartWithAmount } = useCart();
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [topUpAmount, setTopUpAmount] = useState(0);
   const navigation = useNavigation();
-  const [user, setUser] = useState([]);
   const [userId, setUserId] = useState(null);
 
   useEffect(() => {
@@ -41,7 +40,6 @@ const WalletScreen = () => {
       try {
         const userData = await AsyncStorage.getItem("userData");
         const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
         setUserId(parsedUser._id);
       } catch (error) {
         console.error("Error retrieving user data:", error);
@@ -55,19 +53,14 @@ const WalletScreen = () => {
     const fetchWalletDetails = async () => {
       try {
         const walletBalanceResponse = await walletApi.getWalletBalance(userId);
-        // Check the status code to see if the wallet exists
         if (walletBalanceResponse.status === 404) {
-          // Create wallet if it doesn't exist
           const newWallet = await walletApi.createWallet(userId);
-          // Update the balance state with the newly created wallet's balance
           setBalance(newWallet.data.balance);
         } else {
-          // Wallet exists, update the balance state
           const walletBalance = walletBalanceResponse.data.balance;
           setBalance(walletBalance);
         }
 
-        // Fetch transaction history
         const transactionHistoryResponse = await walletApi.transactions(userId);
         const transactions = transactionHistoryResponse.data.transactions;
         setTransactions(transactions || []);
@@ -89,28 +82,43 @@ const WalletScreen = () => {
   };
 
   const handleAddMoney = () => {
-    // Validate amountToAdd
     if (!amountToAdd) {
-      // Handle empty amountToAdd
+      Alert.alert("Amount is required");
       return;
     }
-    // Add money to the wallet
-    setBalance((prevBalance) => prevBalance + parseFloat(amountToAdd));
-    // Add transaction to transactions array
-    setTransactions((prevTransactions) => [
-      ...prevTransactions,
-      {
-        id: prevTransactions.length + 1,
-        type: "topup",
-        amount: parseFloat(amountToAdd),
-      },
-    ]);
-    // Add the wallet top-up to the cart
-    addToCartWithAmount(amountToAdd);
-    // Close the modal
-    handleCloseModal();
-    // Navigate to the cart screen
-    navigation.navigate("Cart");
+    setTopUpAmount(parseFloat(amountToAdd));
+    setModalVisible(true);
+  };
+
+  const handleModalSubmit = async () => {
+    const totalAmount = topUpAmount.toFixed(2);
+    if (!phoneNumber) {
+      Alert.alert("Phone number is required for Mobile Money payment");
+      return;
+    }
+
+    try {
+      const response = await paymentApi.requestToPay(totalAmount.toString(), phoneNumber);
+
+      if (response.success) {
+        Alert.alert("Payment successful. Thank you for your order!");
+        setBalance((prevBalance) => prevBalance + parseFloat(amountToAdd));
+        setTransactions((prevTransactions) => [
+          ...prevTransactions,
+          {
+            id: prevTransactions.length + 1,
+            type: "topup",
+            amount: parseFloat(amountToAdd),
+          },
+        ]);
+        handleCloseModal();
+      } else {
+        Alert.alert("Payment failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error requesting Mobile Money payment:", error);
+      Alert.alert("An error occurred during Mobile Money payment. Please try again later.");
+    }
   };
 
   return (
@@ -138,33 +146,7 @@ const WalletScreen = () => {
             My Wallet
           </Text>
         </View>
-        <TouchableOpacity
-          style={[styles.centerElement, { width: 50, height: 50 }]}
-          onPress={() => navigation.navigate("Cart")}
-        >
-          <MaterialIcons name="shopping-cart-checkout" size={28} color="#fff" />
-          <View
-            style={[
-              styles.centerElement,
-              {
-                width: 18,
-                height: 18,
-                position: "absolute",
-                right: 5,
-                top: 5,
-                backgroundColor:
-                  cart.length > 0 ? colors.secondary : "transparent",
-                borderRadius: 9,
-              },
-            ]}
-          >
-            {cart.length > 0 && (
-              <Text style={{ fontSize: 10, color: "white" }}>
-                {cart.length} {/* Use the length of the cart array */}
-              </Text>
-            )}
-          </View>
-        </TouchableOpacity>
+        
         <TouchableOpacity
           style={[styles.centerElement, { width: 50, height: 50 }]}
           onPress={() => {}}
@@ -211,44 +193,58 @@ const WalletScreen = () => {
         ))}
       </View>
       <Modal
-        visible={isModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={handleCloseModal}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Money</Text>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <MaterialIcons name="attach-money" size={30} color="black" />
-              <TextInput
-                style={styles.input}
-                placeholder="Enter amount"
-                keyboardType="numeric"
-                value={amountToAdd}
-                onChangeText={setAmountToAdd}
-              />
-            </View>
+  visible={isModalVisible}
+  animationType="slide"
+  transparent={true}
+  onRequestClose={handleCloseModal}
+>
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Add Money</Text>
+      <Image
+        style={{ width: 50, height: 50, marginVertical: 10 }}
+        resizeMode="contain"
+        source={require("../assets/momo.jpg")}
+      />
+      <Text style={styles.paymentMethodText}>Payment Method: Mobile Money</Text>
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Mobile Money Number:</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter Mobile Money number"
+          keyboardType="numeric"
+          value={phoneNumber}
+          onChangeText={setPhoneNumber}
+        />
+      </View>
+      <View style={styles.inputContainer}>
+        <MaterialIcons name="attach-money" size={30} color="black" />
+        <TextInput
+          style={styles.input}
+          placeholder="Enter amount"
+          keyboardType="numeric"
+          value={amountToAdd}
+          onChangeText={setAmountToAdd}
+        />
+      </View>
+      <View style={styles.buttonContainer}>
+        <CustomButton
+        title="Add"
+        onPress={handleAddMoney}
+        color={colors.primary}
+      />
+      <CustomButton
+        title="Cancel"
+        onPress={handleCloseModal}
+        color={colors.secondary}
+      />
+      </View>
+      
+    </View>
+  </View>
+</Modal>
 
-            <CustomButton
-              title="Add"
-              onPress={handleAddMoney}
-              color={colors.primary}
-            />
-            <CustomButton
-              title="Cancel"
-              onPress={handleCloseModal}
-              color={colors.secondary} // Pass your desired color
-            />
-          </View>
-        </View>
-      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -256,7 +252,7 @@ const WalletScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f6f6f6",
+    backgroundColor: "#000",
     paddingTop: Platform.OS === "ios" ? 40 : StatusBar.currentHeight,
   },
   content: {
@@ -304,11 +300,15 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 20,
   },
+  buttonContainer: {
+    flexDirection: "row"
+  },
   transactionTitle: {
     fontSize: 18,
     fontWeight: "bold",
     marginTop: 20,
     marginBottom: 10,
+    color: "white"
   },
   transactionContainer: {
     flexDirection: "row",
@@ -318,6 +318,7 @@ const styles = StyleSheet.create({
   },
   transaction: {
     fontSize: 16,
+    color: "white"
   },
   transactionDate: {
     fontSize: 12,
@@ -330,23 +331,38 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: "white",
-    padding: 20,
+    width: '90%',
+    backgroundColor: 'white',
     borderRadius: 10,
-    elevation: 5,
+    padding: 20,
+    alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  paymentMethodText: {
+    fontSize: 12,
+    marginVertical: 10,
+  },
+  inputContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  inputLabel: {
+    fontSize: 12,
+    marginRight: 10,
   },
   input: {
+    flex: 1,
     height: 40,
-    borderColor: "gray",
+    borderColor: 'gray',
     borderWidth: 1,
-    marginBottom: 10,
+    borderRadius: 5,
     paddingHorizontal: 10,
-    width: 200,
   },
 });
 

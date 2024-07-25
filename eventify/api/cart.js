@@ -8,14 +8,14 @@ const addToCart = (data) => client.post(endpoint, data);
 const deleteCartItem = (id) => client.delete(`${endpoint}/${id}`);
 const removeCartItems = async (userId, itemIds) => {
   try {
-    const url = `http://54.158.28.163:8080//api/cart/user/${userId}/deleteMultiple`;
+    const url = `https://app.tick8plus.com/api/cart/user/${userId}/deleteMultiple`;
 
     // Make the DELETE request and return the response
     const response = await axios.delete(url, {
-      data: { itemIds }, // Include the request body
+      data: { itemIds }, 
       headers: {
         "Content-Type": "application/json",
-        "x-auth-token": await authStorage.getToken(), // Include authentication token
+        "x-auth-token": await authStorage.getToken(),
       },
     });
 
@@ -23,7 +23,7 @@ const removeCartItems = async (userId, itemIds) => {
     return response;
   } catch (error) {
     console.error("Error clearing cart after order:", error);
-    throw error; // Re-throw the error to be handled by the caller
+    throw error;
   }
 };
 
@@ -32,6 +32,6 @@ const getUserCartItems = (userId) => client.get(`${endpoint}/user/${userId}`);
 export default {
   addToCart,
   deleteCartItem,
-  removeCartItems, // Export the new function
+  removeCartItems,
   getUserCartItems,
 };

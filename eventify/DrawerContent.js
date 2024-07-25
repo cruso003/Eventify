@@ -9,6 +9,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const DrawerList = [
   {
+    icon: 'card',
+    label: 'Wallet',
+    navigateTo: 'Wallet'
+  },
+  {
     icon: "qr-code-outline",
     label: "QR Scanner",
     navigateTo: "QRScanner",
