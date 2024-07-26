@@ -32,8 +32,6 @@ const LoginScreen = () => {
       };
 
       const response = await userApi.loginUser(credentials);
-      console.log(response, "response");
-      console.log(response.data, "login response.data");
 
       if (response.data && response.data.success) {
         // Handle successful login

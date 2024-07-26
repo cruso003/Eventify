@@ -23,6 +23,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "gray",
     marginTop: 15,
+    marginHorizontal: 15
   },
   buttonText: {
     color: "white",

@@ -1,29 +1,28 @@
-// WalletScreen.js
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   SafeAreaView,
-  Platform,
   StatusBar,
   StyleSheet,
   TouchableOpacity,
   Modal,
   TextInput,
-  Image,
+  Alert,
 } from "react-native";
 import {
   Ionicons,
   MaterialCommunityIcons,
   MaterialIcons,
 } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import colors from "../config/colors";
-import CustomButton from "./forms/CustomButton";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import walletApi from "../api/wallet";
-import { useCart } from "../components/context/CartContext";
+import paymentApi from "../api/payment";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { COLORS } from "../constants";
+import NfcManager from 'react-native-nfc-manager';
 
 const WalletScreen = () => {
   const [balance, setBalance] = useState(0);
@@ -31,46 +30,67 @@ const WalletScreen = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [amountToAdd, setAmountToAdd] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [topUpAmount, setTopUpAmount] = useState(0);
-  const navigation = useNavigation();
+  const [nfcScanModalVisible, setNfcScanModalVisible] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [userIdLoading, setUserIdLoading] = useState(true);
+  const [nfcId, setNfcId] = useState(null);
+
+  const navigation = useNavigation();
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchWalletDetails = async () => {
+        if (userIdLoading || !userId) {
+          return;
+        }
+
+        try {
+          const walletBalanceResponse = await walletApi.getWalletBalance(userId);
+
+          if (walletBalanceResponse.status === 404) {
+            const newWallet = await walletApi.createWallet(userId);
+            setBalance(newWallet.data.balance);
+          } else {
+            const walletBalance = walletBalanceResponse.data.balance;
+            setBalance(walletBalance);
+          }
+
+          const transactionHistoryResponse = await walletApi.transactions(userId);
+          const transactions = transactionHistoryResponse.data.transactions;
+          setTransactions(transactions || []);
+        } catch (error) {
+          console.error("Error fetching wallet details:", error.response ? error.response.data : error.message);
+        }
+      };
+
+      fetchWalletDetails();
+    }, [userId, userIdLoading])
+  );
+
+  useEffect(() => {
+    NfcManager.start();
+    return () => {
+      NfcManager.stop();
+      NfcManager.setEventListenerOff();
+    };
+  }, []);
 
   useEffect(() => {
     const getData = async () => {
       try {
         const userData = await AsyncStorage.getItem("userData");
         const parsedUser = JSON.parse(userData);
-        setUserId(parsedUser._id);
+        setUserId(parsedUser?._id || null);
+        setUserIdLoading(false);
       } catch (error) {
         console.error("Error retrieving user data:", error);
+        setUserIdLoading(false);
       }
     };
 
     getData();
   }, []);
-
-  useEffect(() => {
-    const fetchWalletDetails = async () => {
-      try {
-        const walletBalanceResponse = await walletApi.getWalletBalance(userId);
-        if (walletBalanceResponse.status === 404) {
-          const newWallet = await walletApi.createWallet(userId);
-          setBalance(newWallet.data.balance);
-        } else {
-          const walletBalance = walletBalanceResponse.data.balance;
-          setBalance(walletBalance);
-        }
-
-        const transactionHistoryResponse = await walletApi.transactions(userId);
-        const transactions = transactionHistoryResponse.data.transactions;
-        setTransactions(transactions || []);
-      } catch (error) {
-        console.error("Error fetching wallet details:", error);
-      }
-    };
-
-    fetchWalletDetails();
-  }, [userId]);
 
   const handleTopUp = () => {
     setIsModalVisible(true);
@@ -81,43 +101,113 @@ const WalletScreen = () => {
     setAmountToAdd("");
   };
 
-  const handleAddMoney = () => {
-    if (!amountToAdd) {
-      Alert.alert("Amount is required");
-      return;
-    }
-    setTopUpAmount(parseFloat(amountToAdd));
-    setModalVisible(true);
-  };
-
   const handleModalSubmit = async () => {
-    const totalAmount = topUpAmount.toFixed(2);
-    if (!phoneNumber) {
-      Alert.alert("Phone number is required for Mobile Money payment");
+    const totalAmount = parseFloat(amountToAdd);
+
+    if (!phoneNumber || !amountToAdd) {
+      Alert.alert(
+        "Valid phone number and amount are required for Mobile Money payment"
+      );
       return;
     }
 
     try {
-      const response = await paymentApi.requestToPay(totalAmount.toString(), phoneNumber);
+      setLoading(true);
+      const response = await paymentApi.requestToPay(
+        totalAmount.toString(),
+        phoneNumber
+      );
 
       if (response.success) {
-        Alert.alert("Payment successful. Thank you for your order!");
-        setBalance((prevBalance) => prevBalance + parseFloat(amountToAdd));
-        setTransactions((prevTransactions) => [
-          ...prevTransactions,
-          {
-            id: prevTransactions.length + 1,
-            type: "topup",
-            amount: parseFloat(amountToAdd),
-          },
-        ]);
-        handleCloseModal();
+        Alert.alert("Payment successful.");
+        const amount = totalAmount;
+
+        // Call backend to update the wallet balance
+        const updateResponse = await walletApi.updateWalletBalance(
+          userId,
+          amount
+        );
+        if (updateResponse.status === 200) {
+          setBalance((prevBalance) => prevBalance + totalAmount);
+          setTransactions((prevTransactions) => [
+            ...prevTransactions,
+            {
+              id: prevTransactions.length + 1,
+              type: "topup",
+              amount: totalAmount,
+              date: new Date().toISOString(),
+            },
+          ]);
+          handleCloseModal();
+        } else {
+          Alert.alert("Failed to update wallet balance. Please try again.");
+        }
       } else {
         Alert.alert("Payment failed. Please try again.");
       }
     } catch (error) {
       console.error("Error requesting Mobile Money payment:", error);
-      Alert.alert("An error occurred during Mobile Money payment. Please try again later.");
+      Alert.alert(
+        "An error occurred during Mobile Money payment. Please try again later."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startNfcScan = async () => {
+    try {
+      setNfcScanModalVisible(true);
+      await NfcManager.setEventListenerOn();
+      await NfcManager.requestTechnology(NfcManager.NfcTech.NfcV);
+      const tag = await NfcManager.getTag();
+      setNfcId(tag.id);
+    } catch (error) {
+      console.error("Error scanning NFC tag:", error);
+      Alert.alert("Failed to scan NFC tag. Please try again.");
+    } finally {
+      NfcManager.setEventListenerOff();
+      setNfcScanModalVisible(false);
+    }
+  };
+
+  const handleNfcPayment = async () => {
+    if (!nfcId) {
+      Alert.alert("Please scan an NFC tag first.");
+      return;
+    }
+
+    const amount = parseFloat(amountToAdd);
+
+    if (isNaN(amount) || amount <= 0) {
+      Alert.alert("Please enter a valid amount.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await walletApi.handlePayment(nfcId, amount);
+
+      if (response.success) {
+        setBalance(response.balance);
+        setTransactions((prevTransactions) => [
+          ...prevTransactions,
+          {
+            id: prevTransactions.length + 1,
+            type: "purchase",
+            amount,
+            date: new Date().toISOString(),
+          },
+        ]);
+        Alert.alert("Payment successful.");
+      } else {
+        Alert.alert("Insufficient balance or payment failed.");
+      }
+    } catch (error) {
+      console.error("Error handling NFC payment:", error);
+      Alert.alert("An error occurred during NFC payment. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -146,7 +236,7 @@ const WalletScreen = () => {
             My Wallet
           </Text>
         </View>
-        
+
         <TouchableOpacity
           style={[styles.centerElement, { width: 50, height: 50 }]}
           onPress={() => {}}
@@ -155,10 +245,10 @@ const WalletScreen = () => {
         </TouchableOpacity>
       </View>
       <View style={styles.content}>
-        <View style={styles.balanceCard}>
+        <LinearGradient colors={COLORS.linear} style={styles.balanceCard}>
           <Text style={styles.balanceText}>Wallet Balance:</Text>
           <Text style={{ fontSize: 25, fontWeight: "bold" }}>${balance}</Text>
-        </View>
+        </LinearGradient>
         <TouchableOpacity
           onPress={handleTopUp}
           style={[
@@ -179,72 +269,110 @@ const WalletScreen = () => {
           />
           <Text style={styles.buttonOutlineText}>Add Money</Text>
         </TouchableOpacity>
-        <Text style={styles.transactionTitle}>Transaction History:</Text>
-        {transactions.map((transaction) => (
-          <View key={transaction.id} style={styles.transactionContainer}>
-            <Text style={styles.transaction}>
-              {transaction.type === "topup" ? "Top-Up" : "Payment"} - $
-              {transaction.amount}
-            </Text>
-            <Text style={styles.transactionDate}>
-              {new Date(transaction.date).toLocaleDateString()}
-            </Text>
+        <TouchableOpacity
+          onPress={startNfcScan}
+          style={[
+            styles.button,
+            styles.buttonOutline,
+            {
+              flexDirection: "row",
+              alignItems: "space-around",
+              justifyContent: "center",
+            },
+          ]}
+        >
+          <MaterialCommunityIcons
+            name="nfc"
+            size={24}
+            color="black"
+            style={{ marginRight: 5 }}
+          />
+          <Text style={styles.buttonOutlineText}>Pay with NFC</Text>
+        </TouchableOpacity>
+        <Text style={styles.transactionTitle}>Transaction History</Text>
+        {transactions.length > 0 ? (
+          transactions.map((transaction) => (
+            <View key={transaction.id} style={styles.transactionItem}>
+              <Text style={styles.transactionText}>
+                {transaction.type === "topup" ? "Top-Up" : "Purchase"} - $
+                {transaction.amount}
+              </Text>
+              <Text style={styles.transactionDate}>
+                {new Date(transaction.date).toLocaleDateString()}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.noTransactions}>No transactions yet.</Text>
+        )}
+      </View>
+      <Modal visible={isModalVisible} transparent={true} animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add Money to Wallet</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter amount"
+              keyboardType="numeric"
+              value={amountToAdd}
+              onChangeText={setAmountToAdd}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Enter phone number"
+              keyboardType="phone-pad"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+            />
+            <TouchableOpacity
+              onPress={handleModalSubmit}
+              style={styles.button}
+            >
+              {loading ? (
+                <Text style={styles.buttonText}>Processing...</Text>
+              ) : (
+                <Text style={styles.buttonText}>Submit</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleCloseModal}
+              style={styles.closeButton}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
           </View>
-        ))}
-      </View>
-      <Modal
-  visible={isModalVisible}
-  animationType="slide"
-  transparent={true}
-  onRequestClose={handleCloseModal}
->
-  <View style={styles.modalContainer}>
-    <View style={styles.modalContent}>
-      <Text style={styles.modalTitle}>Add Money</Text>
-      <Image
-        style={{ width: 50, height: 50, marginVertical: 10 }}
-        resizeMode="contain"
-        source={require("../assets/momo.jpg")}
-      />
-      <Text style={styles.paymentMethodText}>Payment Method: Mobile Money</Text>
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Mobile Money Number:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Mobile Money number"
-          keyboardType="numeric"
-          value={phoneNumber}
-          onChangeText={setPhoneNumber}
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <MaterialIcons name="attach-money" size={30} color="black" />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter amount"
-          keyboardType="numeric"
-          value={amountToAdd}
-          onChangeText={setAmountToAdd}
-        />
-      </View>
-      <View style={styles.buttonContainer}>
-        <CustomButton
-        title="Add"
-        onPress={handleAddMoney}
-        color={colors.primary}
-      />
-      <CustomButton
-        title="Cancel"
-        onPress={handleCloseModal}
-        color={colors.secondary}
-      />
-      </View>
-      
-    </View>
-  </View>
-</Modal>
-
-
+        </View>
+      </Modal>
+      <Modal visible={nfcScanModalVisible} transparent={true} animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Scan NFC Tag</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Amount to spend"
+              keyboardType="numeric"
+              value={amountToAdd}
+              onChangeText={setAmountToAdd}
+            />
+            <TouchableOpacity
+              onPress={handleNfcPayment}
+              style={styles.button}
+            >
+              {loading ? (
+                <Text style={styles.buttonText}>Processing...</Text>
+              ) : (
+                <Text style={styles.buttonText}>Pay with NFC</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setNfcScanModalVisible(false)}
+              style={styles.closeButton}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -252,117 +380,96 @@ const WalletScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
-    paddingTop: Platform.OS === "ios" ? 40 : StatusBar.currentHeight,
+    backgroundColor: colors.background,
   },
   content: {
-    flex: 1,
     padding: 20,
   },
-  centerElement: { justifyContent: "center", alignItems: "center" },
   balanceCard: {
-    backgroundColor: colors.secondary,
-    borderRadius: 10,
     padding: 20,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+    alignItems: "center",
     marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
   balanceText: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 18,
+    color: "#fff",
   },
   button: {
-    backgroundColor: "white",
-    marginTop: 5,
-    borderColor: colors.primary,
-    borderWidth: 2,
-    padding: 15,
-    borderRadius: 15,
-    marginLeft: 5,
-    marginRight: 5,
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    marginBottom: 10,
   },
   buttonOutline: {
-    backgroundColor: colors.white,
-    marginTop: 5,
-    borderColor: colors.secondary,
-    borderWidth: 2,
-    marginLeft: 15,
+    borderColor: colors.primary,
+    borderWidth: 1,
+    backgroundColor: "transparent",
   },
   buttonOutlineText: {
+    fontSize: 16,
     color: colors.primary,
-    fontWeight: "bold",
-    fontSize: 20,
-  },
-  buttonContainer: {
-    flexDirection: "row"
   },
   transactionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    marginTop: 20,
     marginBottom: 10,
-    color: "white"
   },
-  transactionContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 5,
+  transactionItem: {
+    padding: 10,
+    borderBottomColor: colors.border,
+    borderBottomWidth: 1,
   },
-  transaction: {
+  transactionText: {
     fontSize: 16,
-    color: "white"
   },
   transactionDate: {
-    fontSize: 12,
-    color: "gray",
+    fontSize: 14,
+    color: colors.grey,
+  },
+  noTransactions: {
+    fontSize: 16,
+    color: colors.grey,
+    textAlign: "center",
+    marginTop: 20,
   },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalContent: {
-    width: '90%',
-    backgroundColor: 'white',
-    borderRadius: 10,
+    width: "80%",
     padding: 20,
-    alignItems: 'center',
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    alignItems: "center",
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  paymentMethodText: {
-    fontSize: 12,
-    marginVertical: 10,
-  },
-  inputContainer: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  inputLabel: {
-    fontSize: 12,
-    marginRight: 10,
+    fontWeight: "bold",
+    marginBottom: 10,
   },
   input: {
-    flex: 1,
-    height: 40,
-    borderColor: 'gray',
+    width: "100%",
+    padding: 10,
     borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: 5,
-    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
+  buttonText: {
+    fontSize: 16,
+    color: "#fff",
+  },
+  closeButton: {
+    marginTop: 10,
+  },
+  closeButtonText: {
+    color: colors.primary,
   },
 });
 

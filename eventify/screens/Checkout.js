@@ -12,6 +12,7 @@ import {
   Platform,
   Modal,
   Button,
+  StatusBar,
 } from "react-native";
 import { MaterialIcons, AntDesign, Ionicons } from "@expo/vector-icons";
 import colors from "../config/colors";
@@ -35,6 +36,7 @@ function Checkout({ route, navigation }) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [user, setUser] = useState([]);
   const [userID, setUserID] = useState(null);
+  const [userIdLoading, setUserIdLoading] = useState(true);
 
   useEffect(() => {
     const getData = async () => {
@@ -43,6 +45,7 @@ function Checkout({ route, navigation }) {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
         setUserID(parsedUser._id);
+        setUserIdLoading(false);
         // Once user state is set, initialize stepTwo
         setStepTwo({
           fullName: parsedUser ? parsedUser.name : "",
@@ -53,6 +56,7 @@ function Checkout({ route, navigation }) {
         });
       } catch (error) {
         console.error("Error retrieving user data:", error);
+        setUserIdLoading(false);
       }
     };
 
@@ -61,19 +65,22 @@ function Checkout({ route, navigation }) {
 
   useEffect(() => {
     // Fetch wallet balance when the component mounts
-    //fetchWalletBalance();
-  }, []);
-
-  const fetchWalletBalance = async () => {
-    try {
-      const response = await walletApi.getWalletBalance(userID);
-      if (response.ok) {
-        setWalletBalance(response.data.balance);
+    const fetchWalletBalance = async () => {
+      if (userIdLoading || !userID) {
+        return;
       }
-    } catch (error) {
-      console.error("Error fetching wallet balance:", error);
-    }
-  };
+      try {
+        const response = await walletApi.getWalletBalance(userID);
+        if (response.ok) {
+          setWalletBalance(response.data.balance);
+        }
+      } catch (error) {
+        console.error("Error fetching wallet balance:", error);
+      }
+    };
+    fetchWalletBalance();
+  }, [userIdLoading, userID]);
+
   const transactionId = uuid.v4();
   const calculateGrandTotal = () => {
     let grandTotal = 0;
@@ -137,7 +144,6 @@ function Checkout({ route, navigation }) {
       Alert.alert("Something went wrong");
       return;
     }
-
     // Present payment sheet and wait for payment success
     const paymentResult = await presentPaymentSheet();
 
@@ -145,7 +151,6 @@ function Checkout({ route, navigation }) {
       Alert.alert("Payment failed. Please try again.");
       return;
     }
-
     // Payment successful, move to the next step
     setCurrentStep(currentStep + 1);
   };
@@ -156,11 +161,11 @@ function Checkout({ route, navigation }) {
       name: "Bank Card",
       icon: require("../assets/cards.jpg"),
     },
-    /*{
+    {
       id: "wallet",
       name: `Wallet balance: $${walletBalance.toFixed(2)}`,
       icon: require("../assets/wallet.jpg"),
-    },*/
+    },
     {
       id: "mobileMoney",
       name: "Mobile Money",
@@ -190,7 +195,7 @@ function Checkout({ route, navigation }) {
   };
 
   const handleModalSubmit = async () => {
-    const totalAmount = calculateGrandTotal().toFixed(2); // Format totalAmount with two decimal places
+    const totalAmount = calculateGrandTotal().toFixed(2); 
     if (!phoneNumber) {
       Alert.alert("Phone number is required for Mobile Money payment");
       return;
@@ -221,8 +226,7 @@ function Checkout({ route, navigation }) {
   const makePayment = async () => {
     try {
       setLoading(true);
-      let orderStatus = "Pending"; // Default order status
-
+  
       // Handle next button click based on the selected payment method
       switch (selectedPaymentMethod) {
         case "bankCard":
@@ -232,15 +236,13 @@ function Checkout({ route, navigation }) {
         case "mobileMoney":
           await handleMobileMoneyPayment();
           break;
-        /*case "wallet":
-          if (walletBalance >= calculateGrandTotal()) {
+        case "wallet":
+          const grandTotal = calculateGrandTotal();
+          if (walletBalance >= grandTotal) {
             // Deduct the total amount from the wallet balance
-            const updatedBalance = walletBalance - calculateGrandTotal();
+            const updatedBalance = walletBalance - grandTotal;
             // Update the wallet balance in the backend
-            const response = await walletApi.updateWalletBalance(
-              userID,
-              -calculateGrandTotal()
-            );
+            const response = await walletApi.updateWalletBalance(userID, -grandTotal);
             if (response.ok) {
               // Update the wallet balance state
               setWalletBalance(updatedBalance);
@@ -255,20 +257,19 @@ function Checkout({ route, navigation }) {
           } else {
             alert("Insufficient balance in your wallet");
           }
-          break;*/
+          break;
         default:
           break;
       }
-
+  
       setLoading(false);
     } catch (error) {
       console.error("Error processing payment:", error);
       // Show an alert box to notify the user about the error
-      window.alert(
-        "An error occurred while processing the payment. Please try again later."
-      );
+      Alert.alert("An error occurred while processing the payment. Please try again later.");
     }
   };
+  
 
   const clearCartAfterOrder = async () => {
     try {
@@ -338,7 +339,7 @@ function Checkout({ route, navigation }) {
       keyboardVerticalOffset={70}
       style={{
         flex: 1,
-        //marginTop: Platform.OS === "ios" ? 40 : StatusBar.currentHeight,
+        marginTop: Platform.OS === "ios" ? 40 : StatusBar.currentHeight,
       }}
       behavior={Platform.OS === "ios" ? "padding" : null}
     >
@@ -534,9 +535,7 @@ function Checkout({ route, navigation }) {
                           }}
                         >
                           <TouchableOpacity
-                            onPress={() => {
-                              /*this.props.navigation.navigate('ProductDetails', {productDetails: item})*/
-                            }}
+                           onPress={() => navigation.goBack()}
                             style={{ paddingRight: 10 }}
                           >
                             <Image
@@ -789,7 +788,7 @@ function Checkout({ route, navigation }) {
                   // If item.amount exists, show only bank card and mobile money options
                   if (stepOne.cartItems.some((item) => item.amount)) {
                     return (
-                      method.id === "bankCard" || method.id === "mobileMoney"
+                      method.id === "bankCard" || method.id === "mobileMoney" || method.id === "wallet"
                     );
                   }
                   // Otherwise, show all payment methods
@@ -926,26 +925,6 @@ function Checkout({ route, navigation }) {
                 onPress={async () => {
                   const totalAmount = calculateGrandTotal().toFixed(2);
                   try {
-                    // Check if it's a virtual order
-                    if (stepOne.cartItems.some((item) => item.amount)) {
-                      const topUpAmount = stepOne.cartItems.reduce(
-                        (total, item) => total + item.amount,
-                        0
-                      );
-                      // Call updateWalletBalance for virtual order
-                      const walletApiResponse =
-                        await walletApi.updateWalletBalance(
-                          user._id,
-                          topUpAmount
-                        );
-                      // Check if the wallet API call was successful
-                      if (walletApiResponse && walletApiResponse.ok) {
-                        console.log("Wallet balance updated successfully");
-                      } else {
-                        throw new Error("Failed to update wallet balance");
-                      }
-                    } else {
-                      // It's a physical order, create the order
                       const orderDetails = {
                         tickets: stepOne.cartItems.map((item) => ({
                           ticketId: item.ticketId,
@@ -959,16 +938,13 @@ function Checkout({ route, navigation }) {
                           totalAmount: parseFloat(totalAmount),
                         })),
                         user: user._id,
-                        status: "Pending", // Assuming the status is set to "Delivered" for physical orders
+                        status: "Pending",
                         payment: {
                           transactionId: transactionId,
                           amount: parseFloat(totalAmount),
                         },
                       };
-
                       await createOrder(orderDetails);
-                    }
-
                     // After updating the wallet balance and creating the order, navigate to the feature screen
                     setCurrentStep({ currentStep: 0 });
                     navigation.navigate("Featured");
@@ -1016,7 +992,7 @@ function Checkout({ route, navigation }) {
                 <Text style={{ color: "#fff" }}>Back</Text>
               </TouchableOpacity>
             )}
-            {currentStep + 1 < steps.length /* add other conditions here */ && (
+            {currentStep + 1 < steps.length && (
               <TouchableOpacity
                 style={[
                   styles.centerElement,
@@ -1067,6 +1043,7 @@ function Checkout({ route, navigation }) {
                 onPress={() => {
                   makePayment();
                 }}
+                disabled={loading}
               >
                 <Text style={{ color: "#fff" }}>Pay Now</Text>
               </TouchableOpacity>

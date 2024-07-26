@@ -15,6 +15,8 @@ import {
   View,
   StyleSheet,
   ActivityIndicator,
+  Platform,
+  StatusBar,
 } from "react-native";
 import { useCart } from "../components/context/CartContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -67,7 +69,7 @@ const CartPage = ({ navigation }) => {
       style={{
         flex: 1,
         backgroundColor: "#f6f6f6",
-        //marginTop: Platform.OS === "ios" ? 40 : StatusBar.currentHeight,
+        marginTop: Platform.OS === "ios" ? 40 : StatusBar.currentHeight,
       }}
     >
       <View
