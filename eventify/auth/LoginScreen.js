@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import colors from "../config/colors";
 import userApi from "../api/users";
 import { FontAwesome, Foundation, MaterialIcons } from "@expo/vector-icons";

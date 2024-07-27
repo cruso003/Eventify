@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { COLORS, dummyData } from "../constants";
+import { COLORS } from "../constants";
 import { McText } from "../components";
 import QRCode from "react-native-qrcode-svg";
 import { LinearGradient } from "expo-linear-gradient";
@@ -57,7 +57,7 @@ const TicketScreen = () => {
         return acc;
       }, []);
 
-      setEventAndTicketIds(eventAndTicketIdsTemp); // set the eventAndTicketIds state here
+      setEventAndTicketIds(eventAndTicketIdsTemp);
 
       const promises = eventAndTicketIdsTemp.map(async ({ eventId }) => {
         return (await events.getEventById(eventId)).data;
@@ -78,6 +78,9 @@ const TicketScreen = () => {
     }, [userId, orders])
   );
 
+  // Use a Set to track unique event IDs
+  const uniqueEventIds = new Set();
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -90,6 +93,13 @@ const TicketScreen = () => {
           </View>
         ) : eventsData.length > 0 ? (
           eventsData.map((event) => {
+            // Skip if the event ID is already in the Set
+            if (uniqueEventIds.has(event._id)) {
+              return null;
+            }
+
+            uniqueEventIds.add(event._id);
+
             const ticketId = eventAndTicketIds.find(
               (item) => item.eventId === event._id
             )?.ticketId;
@@ -145,13 +155,17 @@ const TicketScreen = () => {
                   />
                   <View style={styles.ticketDateContainer}>
                     <View style={styles.ticketDetails}>
-                      <McText>{event.name}</McText>
-                      <McText>{event.category}</McText>
-                      <McText>
+                      <McText numberOfLines={1} ellipsizeMode="tail">
+                        {event.name}
+                      </McText>
+                      <McText numberOfLines={1} ellipsizeMode="tail">
+                        {event.category}
+                      </McText>
+                      <McText numberOfLines={1} ellipsizeMode="tail">
                         {moment(event.startingTime).format("MMM")}{" "}
                         {moment(event.startingTime).format("DD")}
                       </McText>
-                      <McText>
+                      <McText numberOfLines={1} ellipsizeMode="tail">
                         {moment(event.startingTime).format("hh:mm A")}
                       </McText>
                     </View>
@@ -164,7 +178,7 @@ const TicketScreen = () => {
         ) : (
           <View style={styles.noEventsContainer}>
             <Text style={styles.noEventsText}>
-              Oops! You dont have any tickets yet.
+              Oops! You don't have any tickets yet.
             </Text>
             <TouchableOpacity
               style={styles.noEventsButton}
@@ -172,7 +186,7 @@ const TicketScreen = () => {
                 navigation.navigate("Featured");
               }}
             >
-              <Text style={styles.noEventsButtonText}>Go to Home</Text>
+              <Text style={styles.noEventsButtonText}>Go to Feature Screen</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -207,7 +221,7 @@ const styles = StyleSheet.create({
   ticketBGImage: {
     alignSelf: "center",
     width: 200,
-    aspectRatio: 200 / 200,
+    aspectRatio: 1,
     borderTopLeftRadius: 15,
     borderTopRightRadius: 15,
     overflow: "hidden",
@@ -233,6 +247,7 @@ const styles = StyleSheet.create({
   },
   ticketDetails: {
     alignItems: "center",
+    width: 120,
   },
   blackCircle: {
     height: 80,
@@ -252,7 +267,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   noEventsButton: {
-    //backgroundColor: COLORS.primary,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,

@@ -35,7 +35,7 @@ import colors from "../config/colors";
 import eventsApi from "../api/events";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const FeaturedScreen = ({ navigation }) => {
+const FeatureScreen = ({ navigation }) => {
   const cartMain = useCart();
   const cart = cartMain.cart;
   const [cartLength, setCartLength] = useState(0);
@@ -499,4 +499,4 @@ const styles = StyleSheet.create({
   centerElement: { justifyContent: "center", alignItems: "center" },
 });
 
-export default FeaturedScreen;
+export default FeatureScreen;

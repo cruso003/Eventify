@@ -22,7 +22,7 @@ import walletApi from "../api/wallet";
 import paymentApi from "../api/payment";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS } from "../constants";
-import NfcManager from 'react-native-nfc-manager';
+//import NfcManager from 'react-native-nfc-manager';
 
 const WalletScreen = () => {
   const [balance, setBalance] = useState(0);
@@ -69,10 +69,10 @@ const WalletScreen = () => {
   );
 
   useEffect(() => {
-    NfcManager.start();
+    //NfcManager.start();
     return () => {
-      NfcManager.stop();
-      NfcManager.setEventListenerOff();
+     // NfcManager.stop();
+      //NfcManager.setEventListenerOff();
     };
   }, []);
 
@@ -158,9 +158,9 @@ const WalletScreen = () => {
   const startNfcScan = async () => {
     try {
       setNfcScanModalVisible(true);
-      await NfcManager.setEventListenerOn();
-      await NfcManager.requestTechnology(NfcManager.NfcTech.NfcV);
-      const tag = await NfcManager.getTag();
+     // await NfcManager.setEventListenerOn();
+      //await NfcManager.requestTechnology(NfcManager.NfcTech.NfcV);
+      //const tag = await NfcManager.getTag();
       setNfcId(tag.id);
     } catch (error) {
       console.error("Error scanning NFC tag:", error);

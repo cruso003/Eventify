@@ -54,8 +54,7 @@
             "usesCleartextTraffic": true
           }
         }
-      ],
-      "react-native-nfc-manager"
+      ]
     ],
     "extra": {
       "eas": {

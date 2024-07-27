@@ -1,42 +1,28 @@
 import React, { useState, useEffect } from "react";
 import * as Font from "expo-font";
 import { View, ActivityIndicator, StatusBar } from "react-native";
-import { Link, NavigationContainer } from "@react-navigation/native";
-import { EventDetail } from "./screens";
-import { COLORS, customFonts, icons } from "./constants";
+import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import FeaturedScreen from "./screens/Featured";
-import ScheduleScreen from "./screens/Schedule";
-import TicketsScreen from "./screens/Tickets";
-import AccountScreen from "./screens/Account";
-import { McIcon, McText } from "./components";
-import RegisterScreen from "./screens/RegisterScreen";
-import LoginScreen from "./screens/LoginScreen";
-import ForgotPassword from "./screens/ForgotPassword";
-import OtpVerification from "./auth/otpVerification";
-import { CartProvider } from "./components/context/CartContext";
-import CartPage from "./screens/Cart";
-import CheckoutScreen from "./screens/Checkout";
 import { StripeProvider } from "@stripe/stripe-react-native";
-import UpdateProfile from "./screens/ProfileUpdate/updateProfile";
 import Toast, { BaseToast, ErrorToast } from "react-native-toast-message";
 import { createDrawerNavigator } from "@react-navigation/drawer";
-import DrawerContent from "./DrawerContent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import OrganizerRegistration from "./screens/OrganizerRegistration";
-import AddEvent from "./screens/EventsUploads/AddEvent";
-import AddEventTypes from "./screens/EventsTypes/AddEventTypes";
-import AddEventCategory from "./screens/EventCategory/AddCategory";
 import { PaperProvider } from "react-native-paper";
-import Search from "./screens/Search";
-import WalletScreen from "./screens/WalletScreen";
-import QRScannerScreen from "./screens/QRScannerScreen";
-import CategorySelectionScreen from "./screens/CategorySelectionScreen";
-import ContactUs from "./screens/ContactUs";
 import * as Linking from "expo-linking";
 
+import {EventDetail,FeatureScreen,ScheduleScreen,TicketsScreen,AccountScreen,UpdateProfile,CheckoutScreen,CartPage,Search,WalletScreen,QRScannerScreen,ContactUs,CategorySelectionScreen} from "./screens";
+import {LoginScreen,RegisterScreen,OtpVerification,ForgotPassword,OrganizerRegistration} from "./auth"
+import { COLORS, customFonts, icons } from "./constants";
+import { McIcon, McText } from "./components";
+import { CartProvider } from "./components/context/CartContext";
+import DrawerContent from "./DrawerContent";
+
+
 const Stack = createNativeStackNavigator();
+const Drawer = createDrawerNavigator();
+const Tab = createBottomTabNavigator();
+
 const STRIPE_KEY =
   "pk_test_51KDsVdHjllFf5pa1Ir48dU2N3rquvHyMJyL6dT86biDxww7ko7WW9k9FGPHng97PnqSW3PQ83hoIaiisOBIN5ODp001LF3F78E";
 
@@ -85,8 +71,7 @@ const toastConfig = {
     />
   ),
 };
-const Drawer = createDrawerNavigator();
-const Tab = createBottomTabNavigator();
+
 
 const TabIcon = ({ focused, icon }) => {
   return (
@@ -128,7 +113,7 @@ const LoginNavigator = () => {
 
   useEffect(() => {
     _loadAssetsAsync();
-  });
+  }, []);
 
   return assetsLoaded ? (
     <Stack.Navigator
@@ -165,12 +150,9 @@ const DrawerNavigator = () => {
         }}
       >
         <Drawer.Screen name="FeaturedDrawerScreen" component={StackNavigator} />
-        <Drawer.Screen name="Add-Event" component={AddEvent} />
         <Drawer.Screen name="QRScanner" component={QRScannerScreen} />
         <Drawer.Screen name="Tickets" component={TicketsScreen} />
         <Drawer.Screen name="Wallet" component={WalletScreen} />
-        <Drawer.Screen name="Add-EventTypes" component={AddEventTypes} />
-        <Drawer.Screen name="Add-Category" component={AddEventCategory} />
         <Drawer.Screen name="ContactUs" component={ContactUs} />
       </Drawer.Navigator>
     </CartProvider>
@@ -197,7 +179,7 @@ function FeaturedTabScreen() {
     >
       <Tab.Screen
         name="Featured"
-        component={FeaturedScreen}
+        component={FeatureScreen}
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon focused={focused} icon={icons.tab_1} />
@@ -257,7 +239,7 @@ const StackNavigator = () => {
 
   useEffect(() => {
     _loadAssetsAsync();
-  });
+  }, []);
 
   return assetsLoaded ? (
     <CartProvider>
@@ -309,30 +291,31 @@ const StackNavigator = () => {
 };
 
 const prefix = Linking.createURL("/");
-const linking = {
-  prefixes: [prefix, "myapp://"],
-  config: {
-    screens: {
-      EventDetail: "eventDetail/:id",
-      // other screens...
-    },
-  },
-};
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState({});
+  const linking = {
+    prefixes: [prefix],
+    config: {
+      screens: {
+        LoginNavigator: "login",
+        DrawerNavigator: "featured",
+      },
+    },
+  };
 
   async function getData() {
     const data = await AsyncStorage.getItem("isLoggedIn");
     const userData = await AsyncStorage.getItem("userData");
 
-    setIsLoggedIn(data);
-    setUser(userData);
+    setIsLoggedIn(JSON.parse(data));
+    setUser(JSON.parse(userData));
   }
 
   useEffect(() => {
     getData();
   }, [isLoggedIn]);
+
   return (
     <View style={{ flex: 1, backgroundColor: "#000000" }}>
       <NavigationContainer linking={linking}>
